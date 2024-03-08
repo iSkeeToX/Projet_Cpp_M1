@@ -51,12 +51,38 @@ class Lattice{
     int8_t* data;
 };
 
+class SiteC{
+    public:
+    int _index;
+    int _x;
+    int _y;
+
+    friend class ConComp;
+        public:
+
+        SiteC (int i, int x, int y) : _index(i), _x(x), _y(y) {}
+        SiteC () = default;
+};
+
 class ConComp{
     public:
     int nx, ny, NbrCC;
 
     void write(const std::string Name) const;
     void Show_Connected_Components(const float a) const;
+
+    SiteC site_xy(int x, int y) const;
+    SiteC site_aleatoire() const;
+    SiteC site_index(int index) const; 
+
+    std::array<SiteC,6> voisins(const SiteC s) const; 
+
+    int operator[] (SiteC s) const;
+    int& operator[] (SiteC s);
+
+    int OuterBorderLength(const int ConCompNumber) const;
+
+
 
     ConComp(const Lattice&L);
     ~ConComp();

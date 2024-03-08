@@ -196,6 +196,13 @@ int8_t& Lattice::operator[] (Site s){
 }
 
 
+int ConComp::operator[] (SiteC s) const{
+    return data[s._index];
+}
+
+int& ConComp::operator[] (SiteC s){
+    return data[s._index];
+}
 //_____________________________Constructeurs
 
 Lattice::Lattice(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
@@ -381,4 +388,114 @@ void ConComp::write(const std::string Name) const{
         }
         fich << data[k] << " ";
     }
+}
+
+
+SiteC ConComp::site_xy(int x, int y) const{
+    int xm=x%nx;
+    int ym=y%ny;
+    if (xm < 0 && ym < 0){
+        xm+=nx; ym+=ny;
+        return SiteC(ny*xm+ym,xm,ym);
+    }
+    else if (xm < 0){
+        xm+=nx;
+        return SiteC(ny*xm+ym,xm,ym);
+    }
+    else if (ym < 0){
+        ym+=ny;
+        return SiteC(ny*xm+ym,xm,ym);
+    }
+    else{
+        return SiteC(ny*xm+ym,xm,ym);
+    }
+}
+
+SiteC ConComp::site_aleatoire() const{
+    
+    std::uniform_int_distribution<int> distribution(0, nx*ny);
+    
+    int _index=distribution(gen);
+    int y=_index%ny;
+    if(y < 0){
+        return SiteC(_index,_index/ny,y+ny);
+    }
+    else{
+        return SiteC(_index,_index/ny,y);
+    }
+}
+
+//index=ny*x+y
+SiteC ConComp::site_index(int index) const{
+    int y=index%ny;
+    if(y < 0){
+        return SiteC(index,index/ny,y+ny);
+    }
+    else{
+        return SiteC(index,index/ny,y);
+    }
+}
+
+
+//Tourne dans le sens trigo, en partant de la droite
+std::array<SiteC,6> ConComp::voisins(const SiteC s) const{
+    int x=s._x, y=s._y;
+    if(x%2 ==0){
+        return {this->site_xy(x,y+1), this->site_xy(x-1,y), this->site_xy(x-1,y-1), this->site_xy(x,y-1), this->site_xy(x+1,y-1), this->site_xy(x+1,y)};
+    }
+    else{
+        return {this->site_xy(x,y+1), this->site_xy(x-1,y+1), this->site_xy(x-1,y), this->site_xy(x,y-1), this->site_xy(x+1,y), this->site_xy(x+1,y+1)};
+    }
+}
+
+
+int ConComp::OuterBorderLength(const int ConCompNumber) const{
+    if(ConCompNumber > NbrCC){
+        throw std::invalid_argument("There are not that many connected components");
+    }
+    int k = nx*ny - 1;
+    for(k = nx*ny - 1; data[k] != ConCompNumber; k--){}
+    int Length = 0;
+
+    SiteC StartingSite = (*this).site_index(k);
+    std::array<SiteC,6> Voisins = (*this).voisins(StartingSite);
+    int j=0;
+    for(int i = 0; i<6 && (*this)[Voisins[i]] == 0; i++){
+        j++;
+    }
+    if(j == 6){
+        return 6;
+    }
+    
+    int ExitFace = 5;
+    int FirstExitFace = 5;
+    int EntryFace = 5;
+    while((*this)[Voisins[(ExitFace-1)%6]] == 0){
+        ExitFace--;
+        FirstExitFace--;
+        EntryFace--;
+    }
+    while((*this)[Voisins[EntryFace%6]] == 0){
+        EntryFace++;
+    }
+    Length+= EntryFace - ExitFace;
+
+    SiteC s = Voisins[EntryFace%6];
+    ExitFace = (EntryFace + 4)%6;
+
+    while ( !((s._index == StartingSite._index) && (ExitFace == FirstExitFace))){
+        Voisins = (*this).voisins(s);
+        
+        EntryFace = ExitFace;
+        
+        while((*this)[Voisins[EntryFace%6]] == 0){
+            EntryFace++;
+        }
+        Length+= EntryFace - ExitFace;
+        s = Voisins[EntryFace%6];
+        ExitFace = (EntryFace + 4)%6;
+    }
+    
+    return Length;
+
 }

@@ -41,30 +41,34 @@ void Garder() {
 }
 
 int main(){
-    int nx=100, ny=100;
+    int nx=20, ny=20;
     float Taille=10;
 
     IsingModel L=IsingModel(nx, ny);
-    L.Initialise_Lattice(2500);
+    L.Initialise_Lattice(100);
+    
     ConComp Connected = ConComp(L);
 
     Connected.write("Connected_Components.txt");
     sf::Color custom(127, 127, 127, 255); //Gris 
-    sf::RenderWindow window(sf::VideoMode(600,500), "Mon super projet");
-    while(window.isOpen()){
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
+    //sf::RenderWindow window(sf::VideoMode(600,500), "Mon super projet");
+    //while(window.isOpen()){
+    //    sf::Event event;
+    //    while (window.pollEvent(event)) {
+    //        if (event.type == sf::Event::Closed)
+    //            window.close();
+    //    }
         
-        window.clear(custom);
-        L.affiche_SFML(window, Taille);
+    //    window.clear(custom);
+    //   L.affiche_SFML(window, Taille);
        
-        window.display();
+    //    window.display();
+    //}
+
+    for(int ConCompNumber=1; ConCompNumber < Connected.NbrCC; ConCompNumber++){
+        cout << "ConComp : " << ConCompNumber << " Lenght : " << Connected.OuterBorderLength(ConCompNumber) << "\n";
     }
 
-    Connected.Show_Connected_Components(Taille);
+    Connected.Show_Connected_Components(2*Taille);
     cout << Connected.NbrCC << "\n";
-    
 }
