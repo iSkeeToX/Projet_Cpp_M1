@@ -229,10 +229,16 @@ void dfs(const Site s, const Lattice& L, int* data, Lattice& visited, const int 
     }
 }
 
-ConComp::ConComp(const Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
+ConComp::ConComp(Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
     data = new int[nx*ny];
     Lattice visited = Lattice(nx,ny);
     Lattice Connected = Lattice(nx,ny);
+
+    //Pour retirer les cas chiants quand on calcule les outer surface des composantes connexes
+    //On va pas retirer beaucoup de particules anyway ~ 0.1 * ny << NbrParts
+    for(int y=0; y<ny; y++){
+        L[L.site_xy(nx-1, y)] = 0;
+    }
 
     int CurrentLabel = 1;
 
@@ -248,6 +254,19 @@ ConComp::ConComp(const Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
 
     NbrCC = CurrentLabel;
 }
+
+ConComp::ConComp(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
+    data= new int[nx*ny];
+    
+    if(ny%2==1){
+        throw std::runtime_error("ny doit être pair pour respecter les conditions de BVK");
+    }
+    for(int i=0;i<nx*ny;i++){
+        data[i]=0;
+    }
+}
+
+
 
 //Destructeur
 Lattice::~Lattice(){
@@ -448,11 +467,13 @@ std::array<SiteC,6> ConComp::voisins(const SiteC s) const{
     }
 }
 
-
+//Donne la longueur de la bordure extérieure d'une composante connexe
+//Moore-Algorithm
 int ConComp::OuterBorderLength(const int ConCompNumber) const{
     if(ConCompNumber > NbrCC){
         throw std::invalid_argument("There are not that many connected components");
     }
+
     int k = nx*ny - 1;
     for(k = nx*ny - 1; data[k] != ConCompNumber; k--){}
     int Length = 0;
@@ -499,3 +520,96 @@ int ConComp::OuterBorderLength(const int ConCompNumber) const{
     return Length;
 
 }
+
+Matrix ConComp::SizeConComps() const{
+    Matrix Size = Matrix(NbrCC, 1);
+    //Size(i-1,0) -> Taille de la composante connexe i
+
+    for(int k=0; k < nx*ny; k++){
+        if(data[k] !=0){
+            Size(data[k]-1,0)++;
+        }
+    }
+
+    return Size;
+}
+
+bool ConComp::IsOnLeftEdge(const int ConCompNumber) const{
+    for(int x=0; x<nx; x++){
+        if ((*this)[(*this).site_xy(x,0)] == ConCompNumber){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ConComp::IsOnTopEdge(const int ConCompNumber) const{
+    for(int y=0; y<ny; y++){
+        if ((*this)[(*this).site_xy(0,y)] == ConCompNumber){
+            return true;
+        }
+    }
+    return false;
+}
+
+ConComp ConComp::isolate(const int ConCompNumber) const{
+    if(ConCompNumber > NbrCC){
+        throw std::invalid_argument("There are not that many connected components");
+    }
+    
+    int x=0;
+    int y=0;
+    int k=0;
+
+    if ((*this).IsOnLeftEdge(ConCompNumber)){
+        y = y - ny/2;
+    }
+    if ((*this).IsOnTopEdge(ConCompNumber)){
+        x = x - nx/2;
+    }
+
+    while(data[k]!=ConCompNumber){
+        k++;
+    }
+
+    SiteC s = (*this).site_index(k);
+    int xmin = s._x - x, xmax = s._x - x, ymin = s._y - y, ymax = s._y - y;
+
+    for(int xp=0; xp < nx; xp++){
+        for(int yp=0; yp < ny; yp++){
+            if((*this)[(*this).site_xy(x + xp, y + yp)] == ConCompNumber){
+                if(xp < xmin){
+                    xmin = xp;
+                }
+                if(xp > xmax){
+                    xmax = xp;
+                }
+                if(yp < ymin){
+                    ymin = yp;
+                }
+                if(yp > ymax){
+                    ymax = yp;
+                }
+            }
+        }
+    }
+
+    std::cout << xmin << " " << xmax << " " << ymin << " " << ymax << "\n";
+    int shift = (xmin + 1)%2; //Nécessaire pour conserver la forme de la structure !
+    ConComp Isolated = ConComp(xmax - xmin + 3 + shift, ymax - ymin + 3 + (ymax - ymin + 1)%2);
+    Isolated.NbrCC = ConCompNumber;
+
+    
+
+    for(int xp = 0; xp < xmax - xmin + 1; xp++){
+        for(int yp = 0; yp < ymax - ymin + 1; yp++){
+            Isolated[Isolated.site_xy(shift + 1 + xp, 1+yp)] = (*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)];
+        }
+    }
+
+    return Isolated;
+}
+
+
+
+

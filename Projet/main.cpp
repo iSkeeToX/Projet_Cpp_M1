@@ -14,7 +14,7 @@ using namespace std;
 
 #include<random>
 
-void Garder() {
+void FaitTournerMetropolis() {
     
     int nx=256, ny=256;
     int Nparts=(nx*ny)/9;
@@ -40,35 +40,46 @@ void Garder() {
     Ising.Metropolis_Step();
 }
 
-int main(){
+void TesterConComp(){
     int nx=20, ny=20;
     float Taille=10;
 
     IsingModel L=IsingModel(nx, ny);
     L.Initialise_Lattice(100);
-    
+
     ConComp Connected = ConComp(L);
 
     Connected.write("Connected_Components.txt");
     sf::Color custom(127, 127, 127, 255); //Gris 
-    //sf::RenderWindow window(sf::VideoMode(600,500), "Mon super projet");
-    //while(window.isOpen()){
-    //    sf::Event event;
-    //    while (window.pollEvent(event)) {
-    //        if (event.type == sf::Event::Closed)
-    //            window.close();
-    //    }
-        
-    //    window.clear(custom);
-    //   L.affiche_SFML(window, Taille);
-       
-    //    window.display();
-    //}
 
+    Matrix Size = Connected.SizeConComps();
+    
     for(int ConCompNumber=1; ConCompNumber < Connected.NbrCC; ConCompNumber++){
-        cout << "ConComp : " << ConCompNumber << " Lenght : " << Connected.OuterBorderLength(ConCompNumber) << "\n";
+        cout << "ConComp : " << ConCompNumber << " Length : " << Connected.OuterBorderLength(ConCompNumber) << " Size : " << Size(ConCompNumber-1,0) << "\n";
     }
 
     Connected.Show_Connected_Components(2*Taille);
     cout << Connected.NbrCC << "\n";
+}
+
+int main(){
+    ConComp Connected = ConComp(100, 100);
+    Connected.NbrCC = 1;
+
+    int x = 0, y = 0;
+    Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
+    Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
+
+    Connected.Show_Connected_Components(2*10);
+
+    ConComp Isolated = Connected.isolate(1);
+    
+
+    for(int x=0; x< Isolated.nx; x++){
+        for(int y=0; y< Isolated.ny; y++){
+            cout << Isolated[Isolated.site_xy(x,y)] << " ";
+        }
+        cout << "\n";
+    }
+    Isolated.Show_Connected_Components(2*10);
 }

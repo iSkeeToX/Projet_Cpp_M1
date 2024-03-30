@@ -81,10 +81,14 @@ class ConComp{
     int& operator[] (SiteC s);
 
     int OuterBorderLength(const int ConCompNumber) const;
+    Matrix SizeConComps() const;
+    
+    bool IsOnLeftEdge(const int ConCompNumber) const;
+    bool IsOnTopEdge(const int ConCompNumber) const;
+    ConComp isolate(const int ConCompNumber) const;
 
-
-
-    ConComp(const Lattice&L);
+    ConComp(Lattice&L);
+    ConComp(int nx, int ny);
     ~ConComp();
     private:
     int* data;
