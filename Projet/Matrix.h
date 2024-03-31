@@ -1,6 +1,8 @@
 #ifndef _MATRIX_
 #define _MATRIX_
 
+#include <iostream>
+
 class Matrix{
     public:
     int nx,ny;
@@ -25,9 +27,10 @@ class Matrix{
     Matrix operator*(const Matrix& other);
     Matrix operator*(const double& scalar);
     
+    friend std::ostream& operator<<(std::ostream& os, const Matrix& M);
+
     private:
     double* data;
-
 };
 
 class TriangularMatrix : public Matrix {

@@ -170,4 +170,17 @@ Matrix Matrix::operator*(const double& scalar){
 
     return Result;
 }
+
+std::ostream& operator<<(std::ostream& os, const Matrix& M){
+    os << "\n";
+    for(int i=0; i< M.nx; i++){
+        for(int j=0; j< M.ny; j++){
+            std::cout << M(i,j) << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+
+    return os;
+}
 //_____________________________Constructeur TriangularMatrix

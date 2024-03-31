@@ -66,25 +66,20 @@ int main(){
     ConComp Connected = ConComp(100, 100);
     Connected.NbrCC = 1;
 
-    int x = 0, y = 0;
+    int x = 10, y = 10;
     Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
     Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
     Connected[Connected.site_xy(x+2,y+2)]=1, Connected[Connected.site_xy(x+3,y+2)]=1,Connected[Connected.site_xy(x+3,y+1)]=1, Connected[Connected.site_xy(x+3,y)]=1;
     
-    ConComp Isolated = Connected.isolateConComp(1);
+    int xp = x + 4;
+    Connected[Connected.site_xy(xp,y)]=1, Connected[Connected.site_xy(xp+1,y)]=1, Connected[Connected.site_xy(xp+2,y)]=1;
+    Connected[Connected.site_xy(xp+1,y+1)]=1, Connected[Connected.site_xy(xp+1,y+2)]=1;
+    Connected[Connected.site_xy(xp+2,y+2)]=1, Connected[Connected.site_xy(xp+3,y+2)]=1,Connected[Connected.site_xy(xp+3,y+1)]=1, Connected[Connected.site_xy(xp+3,y)]=1;
     
+    Matrix Parameters = Connected.ClustersParameters();
 
-    for(int x=0; x< Isolated.nx; x++){
-        for(int y=0; y< Isolated.ny; y++){
-            cout << Isolated[Isolated.site_xy(x,y)] << " ";
-        }
-        cout << "\n";
-    }
-    Isolated.Show_Connected_Components(2*10);
+    cout << Parameters;
 
-    ConComp Complementary = Isolated.Complementary();
-
-    Complementary.Show_Connected_Components(2*10);
-
-    cout << "Size of holes : " << Isolated.SizeOfHoles() << "\n";
+    Connected.Show_Connected_Components(2*10);
+    
 }

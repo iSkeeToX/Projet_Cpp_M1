@@ -592,7 +592,6 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
         }
     }
 
-    std::cout << xmin << " " << xmax << " " << ymin << " " << ymax << "\n";
     int shift = (xmin + 1)%2; //Nécessaire pour conserver la forme de la structure !
     ConComp Isolated = ConComp(xmax - xmin + 3 + shift, ymax - ymin + 3 + (ymax - ymin + 1)%2);
     Isolated.NbrCC = ConCompNumber;
@@ -673,21 +672,22 @@ int ConComp::SizeOfHoles() const{
 }
 
 //Size, SizeHoles, Volume, Porosity, Surface to volume ratio, Sphericity
+//Parameters(CCN-1,i) -> param i de la CCN
 Matrix ConComp::ClustersParameters() const{
     Matrix Size = (*this).SizeConComps();//Size(CC-1,0)
-    Matrix Parameters = Matrix(NbrCC, 5);
+    Matrix Parameters = Matrix(NbrCC, 6);
 
     for(int CCN = 1; CCN < NbrCC+1; CCN++){
         ConComp Isolated = (*this).isolateConComp(CCN);
         int OuterSurface = Isolated.OuterBorderLength(Isolated.NbrCC);
 
         Parameters(CCN - 1, 0) = Size(CCN -1, 0);
-        Parameters(CCN - 1, 1) = Isolated.Complementary().SizeOfHoles();
+        Parameters(CCN - 1, 1) = Isolated.SizeOfHoles();
         Parameters(CCN - 1, 2) = Parameters(CCN - 1, 0) + Parameters(CCN - 1, 1);
         Parameters(CCN - 1, 3) = Parameters(CCN - 1, 1) / ((double) Parameters(CCN - 1, 2));
         Parameters(CCN - 1, 4) = OuterSurface / ((double) 2*Parameters(CCN - 1, 2));    
-        Parameters(CCN - 1, 5); //Sphericity pas faite WIP
-
+        Parameters(CCN - 1, 5) = sqrt(Parameters(CCN - 1, 2) * (3 * sqrt(3)) * (2*M_PI));
     }
 
+    return Parameters;
 }
