@@ -85,7 +85,13 @@ class ConComp{
     
     bool IsOnLeftEdge(const int ConCompNumber) const;
     bool IsOnTopEdge(const int ConCompNumber) const;
-    ConComp isolate(const int ConCompNumber) const;
+    ConComp isolateConComp(const int ConCompNumber) const;
+
+    ConComp Complementary() const;
+    int SizeOfHoles() const;
+
+    Matrix ClustersParameters() const;
+    
 
     ConComp(Lattice&L);
     ConComp(int nx, int ny);

@@ -232,7 +232,7 @@ void dfs(const Site s, const Lattice& L, int* data, Lattice& visited, const int 
 ConComp::ConComp(Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
     data = new int[nx*ny];
     Lattice visited = Lattice(nx,ny);
-    Lattice Connected = Lattice(nx,ny);
+    //Lattice Connected = Lattice(nx,ny);
 
     //Pour retirer les cas chiants quand on calcule les outer surface des composantes connexes
     //On va pas retirer beaucoup de particules anyway ~ 0.1 * ny << NbrParts
@@ -409,7 +409,6 @@ void ConComp::write(const std::string Name) const{
     }
 }
 
-
 SiteC ConComp::site_xy(int x, int y) const{
     int xm=x%nx;
     int ym=y%ny;
@@ -454,7 +453,6 @@ SiteC ConComp::site_index(int index) const{
         return SiteC(index,index/ny,y);
     }
 }
-
 
 //Tourne dans le sens trigo, en partant de la droite
 std::array<SiteC,6> ConComp::voisins(const SiteC s) const{
@@ -526,7 +524,7 @@ Matrix ConComp::SizeConComps() const{
     //Size(i-1,0) -> Taille de la composante connexe i
 
     for(int k=0; k < nx*ny; k++){
-        if(data[k] !=0){
+        if(!(data[k] == 0 || data[k] == -1)){
             Size(data[k]-1,0)++;
         }
     }
@@ -552,7 +550,7 @@ bool ConComp::IsOnTopEdge(const int ConCompNumber) const{
     return false;
 }
 
-ConComp ConComp::isolate(const int ConCompNumber) const{
+ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     if(ConCompNumber > NbrCC){
         throw std::invalid_argument("There are not that many connected components");
     }
@@ -603,13 +601,93 @@ ConComp ConComp::isolate(const int ConCompNumber) const{
 
     for(int xp = 0; xp < xmax - xmin + 1; xp++){
         for(int yp = 0; yp < ymax - ymin + 1; yp++){
-            Isolated[Isolated.site_xy(shift + 1 + xp, 1+yp)] = (*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)];
+            if ((*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)] == ConCompNumber){
+                Isolated[Isolated.site_xy(shift + 1 + xp, 1+yp)] = (*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)];
+            }
         }
     }
 
     return Isolated;
 }
 
+void dfs_complementary(const SiteC s, const ConComp& Isolated, ConComp& Complementary, ConComp& visited, const int CurrentLabel){ 
+    if (visited[s] == 1 || Isolated[s] != 0){
+        return;
+    }
 
+    visited[s] = 1;
+    Complementary[s] = CurrentLabel;
 
+    for(SiteC voisin : Isolated.voisins(s)){
+        dfs_complementary(voisin, Isolated, Complementary, visited, CurrentLabel);
+    }
+}
 
+void dfs(const SiteC s, ConComp& Complementary, ConComp& visited, const int CurrentLabel){ 
+    if (visited[s] == 1 || Complementary[s] == -1){
+        return;
+    }
+
+    visited[s] = 1;
+    Complementary[s] = CurrentLabel;
+
+    for(SiteC voisin : Complementary.voisins(s)){
+        dfs(voisin, Complementary, visited, CurrentLabel);
+    }
+}
+
+ConComp ConComp::Complementary() const{
+    ConComp visited = ConComp(nx, ny);
+    ConComp Complementary = ConComp(nx, ny);
+
+    for(int k=0; k < nx*ny; k++){
+        if(data[k] != 0){
+            Complementary[Complementary.site_index(k)] = -1;
+        }
+    }
+    dfs_complementary((*this).site_index(0), *this, Complementary, visited, -1);
+
+    int CurrentLabel = 1;
+
+    for(int index = 0; index < nx*ny; index++){
+        if (visited[visited.site_index(index)] == 0 && Complementary[Complementary.site_index(index)] != -1){
+            dfs(Complementary.site_index(index), Complementary, visited, CurrentLabel);
+            CurrentLabel++;
+        }
+    }
+
+    Complementary.NbrCC = CurrentLabel;
+
+    return Complementary;
+}
+
+int ConComp::SizeOfHoles() const{
+    Matrix SizeHoles = (*this).Complementary().SizeConComps();
+    int Size = 0;
+
+    for(int ConCompNumber = 0; ConCompNumber < SizeHoles.nx; ConCompNumber++){
+        Size+= SizeHoles(ConCompNumber, 0);
+    }
+
+    return Size;
+}
+
+//Size, SizeHoles, Volume, Porosity, Surface to volume ratio, Sphericity
+Matrix ConComp::ClustersParameters() const{
+    Matrix Size = (*this).SizeConComps();//Size(CC-1,0)
+    Matrix Parameters = Matrix(NbrCC, 5);
+
+    for(int CCN = 1; CCN < NbrCC+1; CCN++){
+        ConComp Isolated = (*this).isolateConComp(CCN);
+        int OuterSurface = Isolated.OuterBorderLength(Isolated.NbrCC);
+
+        Parameters(CCN - 1, 0) = Size(CCN -1, 0);
+        Parameters(CCN - 1, 1) = Isolated.Complementary().SizeOfHoles();
+        Parameters(CCN - 1, 2) = Parameters(CCN - 1, 0) + Parameters(CCN - 1, 1);
+        Parameters(CCN - 1, 3) = Parameters(CCN - 1, 1) / ((double) Parameters(CCN - 1, 2));
+        Parameters(CCN - 1, 4) = OuterSurface / ((double) 2*Parameters(CCN - 1, 2));    
+        Parameters(CCN - 1, 5); //Sphericity pas faite WIP
+
+    }
+
+}

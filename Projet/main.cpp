@@ -69,10 +69,9 @@ int main(){
     int x = 0, y = 0;
     Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
     Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
-
-    Connected.Show_Connected_Components(2*10);
-
-    ConComp Isolated = Connected.isolate(1);
+    Connected[Connected.site_xy(x+2,y+2)]=1, Connected[Connected.site_xy(x+3,y+2)]=1,Connected[Connected.site_xy(x+3,y+1)]=1, Connected[Connected.site_xy(x+3,y)]=1;
+    
+    ConComp Isolated = Connected.isolateConComp(1);
     
 
     for(int x=0; x< Isolated.nx; x++){
@@ -82,4 +81,10 @@ int main(){
         cout << "\n";
     }
     Isolated.Show_Connected_Components(2*10);
+
+    ConComp Complementary = Isolated.Complementary();
+
+    Complementary.Show_Connected_Components(2*10);
+
+    cout << "Size of holes : " << Isolated.SizeOfHoles() << "\n";
 }
