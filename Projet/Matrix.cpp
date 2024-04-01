@@ -41,6 +41,26 @@ Matrix& Matrix::T() const {
     return *Mt;
 }
 
+void Matrix::add_rows(const Matrix& other){
+    if (ny != other.ny){
+        throw std::invalid_argument("Matrices must have the same number of columns to be concatenated");
+    }
+    
+    double* newdata = new double[(nx+other.nx)*ny];
+    
+    for(int k=0; k< nx*ny; k++){
+        newdata[k] = data[k]; 
+    }
+    
+    for(int k=0; k< other.nx*other.ny; k++){
+        newdata[nx*ny + k] = other.data[k];
+    }
+
+    delete[] data;
+
+    data = newdata;
+    nx+= other.nx;
+}
 
 //_____________________________Constructeur Matrix
 

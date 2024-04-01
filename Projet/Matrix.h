@@ -10,6 +10,8 @@ class Matrix{
     void afficher() const;
 
     Matrix& T() const;
+    
+    void add_rows(const Matrix& other);
 
     Matrix(int nx,int ny);
     Matrix(const Matrix&);
