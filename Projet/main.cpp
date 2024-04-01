@@ -98,29 +98,20 @@ int main(){
     int Nparts = (nx*ny)/9;
 
     int N_Temps = 100;
-    int N_Steps = 100 * Nparts;
+    int N_Steps = 10 * Nparts;
 
-    int N_Stat = 100 * Nparts;
+    int N_Stat = 10 * Nparts;
 
-    int pop = 10, NbrGenes = 21;
+    int pop = 100, NbrGenes = 21;
 
     double mean = 0, stdev = 10;
 
-    double acceptation = 0.88;
+    double acceptation = 1;
 
     Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
-    //D.Next_Generation(Nparts, N_Temps, N_Steps, N_Stat, "blabla.txt", acceptation);
-    //D.Ising.Gaussian_InteractionMap(mean, stdev);
-
-    D.Ising.InteractionMap(4, 0) = -10;
-    D.Ising.Initialise_Lattice(Nparts);
-    D.Ising.Annealing(N_Temps, N_Steps);
-    
-    for(int i=0; i< N_Stat; i++){
-        D.Ising.Metropolis_Step();
+    for(int i=0; i<10; i++){
+        D.Next_Generation(Nparts, N_Temps, N_Steps, N_Stat, "blabla.txt", acceptation);
     }
 
-    cout << ConComp(D.Ising).ClustersParameters().mean_columns();
-    ConComp(D.Ising).Show_Connected_Components(2*10);
 }

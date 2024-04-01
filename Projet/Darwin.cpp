@@ -5,7 +5,7 @@
 #include <random>
 #include <cmath>
 #include <fstream>
-
+#include <filesystem> //Check if a file exist in the current directory
 std::default_random_engine  re(time(0));
 
 //_____________________________Fonctions
@@ -53,15 +53,25 @@ void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N
     Ising.Vider_Lattice();
 }
 
-int Pivot(Matrix& Scores, int low, int high){
-    double pivot = Scores(high, 0);
+int Pivot(Matrix& Scores, int low, int high, bool Ascending, int column){
+    double pivot = Scores(high, column);
     int i = low - 1;
-
-    for(int k = low; k < high; k++){
-        if(Scores(k, 0) >= pivot){
-            i++;
-            std::swap(Scores(i, 0), Scores(k, 0));
-            std::swap(Scores(i, 1), Scores(k, 1));
+    if (Ascending){
+        for(int k = low; k < high; k++){
+            if(Scores(k, column) <= pivot){
+                i++;
+                std::swap(Scores(i, 0), Scores(k, 0));
+                std::swap(Scores(i, 1), Scores(k, 1));
+            }
+        }
+    }
+    else{
+        for(int k = low; k < high; k++){
+            if(Scores(k, column) >= pivot){
+                i++;
+                std::swap(Scores(i, 0), Scores(k, 0));
+                std::swap(Scores(i, 1), Scores(k, 1));
+            }
         }
     }
     std::swap(Scores(i+1, 0), Scores(high, 0));
@@ -70,21 +80,62 @@ int Pivot(Matrix& Scores, int low, int high){
     return i+1;
 }
 
-void quicksort(Matrix& Scores, int low, int high){
+//Ascending = true -> Trie dans l'odre croissant
+//colunm -> Trie selon la colonne column
+void quicksort(Matrix& Scores, int low, int high, bool Ascending, int column){
     if(low < high){
-        int pivot = Pivot(Scores, low, high);
+        int pivot = Pivot(Scores, low, high, Ascending, column);
 
-        quicksort(Scores, low, pivot - 1);
-        quicksort(Scores, pivot + 1, high);
+        quicksort(Scores, low, pivot - 1, Ascending, column);
+        quicksort(Scores, pivot + 1, high, Ascending, column);
     }
 }
 
 void Darwin::Sort_Scores(){
-    quicksort(Scores, 0, pop-1);
+    quicksort(Scores, 0, pop-1, false, 0);
 }
 
 void Darwin::Data(const std::string Name) const{
-    std::ofstream fich(Name);
+    if (!(std::filesystem::exists(Name))){
+        std::ofstream fich(Name);
+        fich << "E(fitness); sigma(fitness); Generation; fitness1; Genes(Scores(0,1),:); fitness50; Genes(Scores(49,1),:); fitness100; Genes(Scores(99,1),:);\n";
+        fich.close();
+    }
+    std::ofstream fich(Name, std::ios_base::app);
+    
+    
+    double mean = 0;
+    for(int i=0; i<Scores.nx; i++){
+        mean+=Scores(i,0);
+    }
+    mean = mean/Scores.nx;
+
+    
+    double stdev = 0;
+    for(int i=0; i<Scores.nx; i++){
+        stdev+= pow(Scores(i,0) - mean, 2);
+    }
+    stdev = sqrt(stdev/Scores.nx);
+
+    fich << mean << "; " << stdev << "; " << generation << "; " << Scores(0,0) << "; [";
+    
+    int index = Scores(0,1);
+    for(int i=0; i<Genes.ny; i++){
+        fich << Genes(index, i) << ", ";
+    }
+    fich << "]; " << Scores(pop/2 - 1, 0) << "; ";
+
+    index = Scores(pop/2 - 1, 1);
+    for(int i=0; i<NbrGenes; i++){
+        fich << Genes(index, i) << ", ";
+    }
+    fich << "]; " << Scores(pop - 1, 0) << "; ";
+
+    index = Scores(pop - 1, 1);
+    for(int i=0; i<NbrGenes; i++){
+        fich << Genes(index, i) << ", ";
+    }
+    fich << "];\n";
 }
 
 //Creation des couples de parents
@@ -105,7 +156,7 @@ Matrix Darwin::futurs_parents(const double acceptation) const{
         acc= Tirer_Proba_Acceptation(re);
 
         if (Scores(k,0)>=Scores(j,0)){
-            if(acc > acceptation){
+            if(acc < acceptation){
                 futurs_parents(i,0)=Scores(k,1);
             }
             else{ 
@@ -113,7 +164,7 @@ Matrix Darwin::futurs_parents(const double acceptation) const{
             }
         }
         else{ 
-            if(acc > acceptation){
+            if(acc < acceptation){
                 futurs_parents(i,0)=Scores(j,1);
             }
             else{ 
@@ -149,7 +200,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
 
     Matrix Genes_enfants = Matrix(2*couples.nx,21);
     Matrix mixing = Matrix(21,1);
-    
+
     Matrix enfant1 = Matrix(21,1);
     Matrix enfant2 = Matrix(21,1);
 
@@ -157,16 +208,11 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
     std::uniform_int_distribution<int> Choix_Heredite(0, 1);
     std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
 
-    for(i=0;i<couples.nx;i++){
-        
-        
+    int shift = 0;
+    for(i=0;i<couples.nx;i++){        
         for(j=0;j<21;j++){
-            mixing(j,0)=Choix_Heredite(re);
-        }
-       
-
-        for(j=0;j<21;j++){
-            if(mixing(j,0)==1){
+            mixing(j, 0) = Choix_Heredite(re);
+            if( mixing(j, 0) == 1){
 
                 if (Tirer_Proba_Mutation(re) < 0.001 ){
                     enfant1(j,0)=-Genes(couples(i,0), j);
@@ -185,7 +231,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
             else{
 
                 if (Tirer_Proba_Mutation(re) < 0.001){
-                     enfant1(j,0)=-Genes(couples(i,1), j);
+                    enfant1(j,0)=-Genes(couples(i,1), j);
                 }
                 else{
                    enfant1(j,0)=Genes(couples(i,1), j);
@@ -197,53 +243,71 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
                     enfant2(j,0)=Genes(couples(i,0),j);  
                 }          
             }
-        
-            for(k=0;k<21;k++){
-                Genes_enfants(i,k)=enfant1(k,0);
-                Genes_enfants(i+1,k)=enfant2(k,0);
-            }
         }
+
+        for(k=0;k<21;k++){
+            Genes_enfants(shift,k)=enfant1(k,0);
+            Genes_enfants(shift+1,k)=enfant2(k,0);
+        }
+        shift+=2;
     }
 
-    quicksort(futurs_parents, 0, futurs_parents.nx - 1);
+    quicksort(futurs_parents, 0, futurs_parents.nx - 1, true, 0);
+    quicksort(Scores, 0, Scores.nx - 1, true, 1);
     k = 0;
     for(j=0; j < 21; j++){
-        Genes(k, j) = Genes(futurs_parents(futurs_parents.nx - 1,0), j);
+        Genes(k, j) = Genes(futurs_parents(0 ,0), j);
     }
+    Scores(k, 0) = Scores(futurs_parents(0 ,0), 0);
+    Scores(k, 1) = k;
     k++;
 
     for(i=1; i<futurs_parents.nx; i++){
-        if (futurs_parents(futurs_parents.nx - i, 0) != futurs_parents(futurs_parents.nx - 1 - i, 0)){
+        if (futurs_parents(i, 0) != futurs_parents(i-1, 0)){
             for(j=0; j < 21; j++){
-                Genes(k, j) = Genes(futurs_parents(futurs_parents.nx - i - 1,0), j);
+                Genes(k, j) = Genes(futurs_parents(i, 0), j);
             }
+            Scores(k, 0) = Scores(futurs_parents(i ,0), 0);
+            Scores(k, 1) = k;
             k++;
         }
     }
     
     for(i = 0; i < Genes_enfants.nx; i++){
         for(j=0; j<21; j++){    
-            Genes(k + i, j);
-            //Genes_enfants(i, j);
+            Genes(k + i, j) = Genes_enfants(i, j);
         }
+        Scores(k + i, 0) = 0;
+    }
+
+    for(i = k + Genes_enfants.nx; i<pop; i++){
+        Scores(i, 1) = i;
     }
 }
 
 void Darwin::Next_Generation(int Nparts, int N_Temps, int N_Steps, int N_Stat, std::string Name, double acceptation){
     
     for(int Individu=0; Individu < pop; Individu++){
-        (*this).Simulation(Individu, Nparts, N_Temps, N_Steps, N_Stat);
-        std::cout << "L'individu " << Individu << "est simulé\n";
+        if(Scores(Individu, 0) == 0){
+            (*this).Simulation(Individu, Nparts, N_Temps, N_Steps, N_Stat);
+        }
+        if(Individu == pop/2){
+            std::cout << "L'individu " << Individu << " est simulé\n";
+        }
+        else if (Individu == 3*(pop/4)){
+            std::cout << "L'individu " << Individu << " est simulé\n";
+        }
     }
+    std::cout << "Simulation de la génération " << generation << " terminée\n";
     (*this).Sort_Scores();
 
     (*this).Data(Name);
     
-
     Matrix Futurs_parents = (*this).futurs_parents(acceptation);
     Matrix Couples = (*this).couples(Futurs_parents);
 
     (*this).Nouveaux_genes(Futurs_parents, Couples);
+    std::cout << "La génération " << generation << " a enfanté la prochaine génération\n";
     generation++;
 }
 
