@@ -12,9 +12,12 @@ class Matrix{
     Matrix& T() const;
     
     void add_rows(const Matrix& other);
+    Matrix mean_columns() const;
+
 
     Matrix(int nx,int ny);
     Matrix(const Matrix&);
+    Matrix(int nx, int ny, double mean, double std); 
     ~Matrix();
 
     double operator()(int i, int j) const;

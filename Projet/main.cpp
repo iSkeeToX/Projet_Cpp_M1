@@ -1,7 +1,7 @@
 #include "Matrix.h"
 #include "TriangularLattice.h"
 #include "IsingModel.h"
-
+#include "Darwin.h"
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -35,6 +35,8 @@ void FaitTournerMetropolis() {
     sf::Color custom(127, 127, 127, 255); //Gris 
     sf::RenderWindow window(sf::VideoMode(1500,900), "Mon super projet");
 
+    //Ising.beta = ...
+    //Ising.Annealing(N_T, N_steps);
     Ising.Annealing(N_T, N_steps, Taille, window);
     
     Ising.Metropolis_Step();
@@ -62,7 +64,7 @@ void TesterConComp(){
     cout << Connected.NbrCC << "\n";
 }
 
-int main(){
+void PourLesParametres(){
     ConComp Connected = ConComp(100, 100);
     Connected.NbrCC = 1;
 
@@ -82,4 +84,25 @@ int main(){
 
     Connected.Show_Connected_Components(2*10);
     
+}
+
+int main(){
+    random_device rd;
+    mt19937 gen(rd());
+
+    uniform_real_distribution<double> dist(0, 100);
+
+    Darwin D = Darwin(10, 21, 0, 10, 100, 100);
+
+    for(int i=0; i<10; i++){
+        D.Scores(i, 0) = dist(gen);
+    }
+
+    cout << D.Scores;
+
+    D.Sort_Scores();
+
+    cout << D.Scores;
+
+    swap(D.Scores(0,1), D.Scores(1,1));
 }

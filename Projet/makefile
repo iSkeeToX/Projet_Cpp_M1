@@ -12,7 +12,7 @@ all: monprogramme
 
 # cible monprogramme : compilation des .cpp (dépendances .o), édition des liens, puis → exécution
 
-monprogramme: main.o Matrix.o TriangularLattice.o IsingModel.o
+monprogramme: main.o Matrix.o TriangularLattice.o IsingModel.o Darwin.o
 	$(CPP) -o prog $^ $(LDFLAGS)
 	./prog
 
@@ -30,4 +30,8 @@ TriangularLattice.o: TriangularLattice.cpp
 
 # compilation de IsingModel.cpp
 IsingModel.o: IsingModel.cpp
+	$(CPP) -o $@ -c $< $(CPPFLAGS)
+
+# compilation de Darwin.cpp
+Darwin.o: Darwin.cpp
 	$(CPP) -o $@ -c $< $(CPPFLAGS)

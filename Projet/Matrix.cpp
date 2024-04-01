@@ -3,6 +3,11 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <random>
+
+std::random_device rdd;
+std::mt19937 genn(rdd());
+
 
 //_____________________________Fonctions
 
@@ -62,6 +67,17 @@ void Matrix::add_rows(const Matrix& other){
     nx+= other.nx;
 }
 
+Matrix Matrix::mean_columns() const{
+    Matrix Mean = Matrix(1, ny);
+
+    for(int j=0; j<ny; j++){
+        for(int i=0; i < nx; i++){
+            Mean(1, j)+= (*this)(i,j) / ((double) nx);
+        }
+    }
+
+    return Mean;
+}
 //_____________________________Constructeur Matrix
 
 Matrix::Matrix(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
@@ -78,6 +94,15 @@ Matrix::Matrix(const Matrix& other) : nx(other.nx), ny(other.ny), data(nullptr){
     data = new double[nx*ny];
     for (int k=0; k< nx*ny; k++){
         data[k] = other.data[k];
+    }
+}
+
+Matrix::Matrix(int nx, int ny, double mean, double std) : nx(nx), ny(ny), data(nullptr){
+    std::normal_distribution<double> Gaussian(mean, std);
+
+    data = new double[nx*ny];
+    for(int k=0; k<nx*ny; k++){
+        data[k] = Gaussian(genn);
     }
 }
 //_____________________________Destructeur Matrix

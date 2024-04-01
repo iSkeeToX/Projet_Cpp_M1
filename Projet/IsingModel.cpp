@@ -52,6 +52,13 @@ void IsingModel::Gaussian_InteractionMap(const float mean, const float standard_
     }
 }
 
+void IsingModel::Vider_Lattice(){
+    for(int i=0; i < Particles.nx; i++){
+        (*this)[(*this).site_xy(Particles(i,0), Particles(i, 1))] = 0;
+    }
+}
+
+
 //Met à jour la matrice contenant les positions des particules
 void IsingModel::Pos_Particules(){
 
@@ -277,7 +284,8 @@ void IsingModel::Annealing(const int N_T, const int N_steps, const float Taille,
 
 void IsingModel::Annealing(const int N_T, const int N_steps){
 
-    beta = 1./N_T;
+    double T_0 = 1/beta;
+    double dT = (1 - T_0)/(N_T - 1);
 
     int steps = 0;
     while(steps < N_T){
@@ -285,6 +293,8 @@ void IsingModel::Annealing(const int N_T, const int N_steps){
             (*this).Metropolis_Step();
         }
         std::cout << "beta : " << beta << "\n______________________\n";
+        T_0+=dT;
+        beta = 1/T_0;
         steps++;
     }
 

@@ -14,6 +14,7 @@ class IsingModel : public Lattice{
 
     void Initialise_Lattice(const int Nparts);
     void Gaussian_InteractionMap(const float mean, const float standard_deviation);
+    void Vider_Lattice();
 
     void Pos_Particules();
     Matrix Voisin_Face_Count() const;
