@@ -11,9 +11,14 @@ std::default_random_engine  re(time(0));
 //_____________________________Fonctions
 
 double recompense(Matrix MeanParameters){
-    MeanParameters(0,1);
-    std::uniform_real_distribution<double> fitness(0,100);
-    return fitness(re);
+    double Size = MeanParameters(0,0);
+    double SizeHoles = MeanParameters(0,1);
+    double Vol = MeanParameters(0, 2);
+    double porosity = MeanParameters(0, 3);
+    //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
+    double Sphericity = MeanParameters(0, 5);
+    
+    return -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 }
 
 //_____________________________Méthodes

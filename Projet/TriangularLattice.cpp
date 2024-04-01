@@ -685,7 +685,7 @@ Matrix ConComp::ClustersParameters() const{
         Parameters(CCN - 1, 2) = Parameters(CCN - 1, 0) + Parameters(CCN - 1, 1);
         Parameters(CCN - 1, 3) = Parameters(CCN - 1, 1) / ((double) Parameters(CCN - 1, 2));
         Parameters(CCN - 1, 4) = OuterSurface / ((double) 2*Parameters(CCN - 1, 2));    
-        Parameters(CCN - 1, 5) = sqrt(Parameters(CCN - 1, 2) * (3 * sqrt(3)) * (2*M_PI));
+        Parameters(CCN - 1, 5) = sqrt(Parameters(CCN - 1, 2) * (3 * sqrt(3)) * (2*M_PI)) / OuterSurface;
     }
 
     return Parameters;
