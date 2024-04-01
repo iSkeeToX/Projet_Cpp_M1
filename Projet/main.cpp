@@ -42,11 +42,11 @@ void FaitTournerMetropolis() {
     Ising.Metropolis_Step();
 }
 
-void TesterConComp(){
+void ConCompTest(){
     int nx=20, ny=20;
     float Taille=10;
 
-    IsingModel L=IsingModel(nx, ny);
+    IsingModel L= IsingModel(nx, ny);
     L.Initialise_Lattice(100);
 
     ConComp Connected = ConComp(L);
@@ -64,45 +64,53 @@ void TesterConComp(){
     cout << Connected.NbrCC << "\n";
 }
 
-void PourLesParametres(){
-    ConComp Connected = ConComp(100, 100);
-    Connected.NbrCC = 1;
+void COnCompTest(){
+    IsingModel Ising = IsingModel(25,50);
 
-    int x = 10, y = 10;
-    Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
-    Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
-    Connected[Connected.site_xy(x+2,y+2)]=1, Connected[Connected.site_xy(x+3,y+2)]=1,Connected[Connected.site_xy(x+3,y+1)]=1, Connected[Connected.site_xy(x+3,y)]=1;
+    Ising.Initialise_Lattice(250);
     
-    int xp = x + 4;
-    Connected[Connected.site_xy(xp,y)]=1, Connected[Connected.site_xy(xp+1,y)]=1, Connected[Connected.site_xy(xp+2,y)]=1;
-    Connected[Connected.site_xy(xp+1,y+1)]=1, Connected[Connected.site_xy(xp+1,y+2)]=1;
-    Connected[Connected.site_xy(xp+2,y+2)]=1, Connected[Connected.site_xy(xp+3,y+2)]=1,Connected[Connected.site_xy(xp+3,y+1)]=1, Connected[Connected.site_xy(xp+3,y)]=1;
+    ConComp Connected = ConComp(Ising);
+    //Connected.NbrCC = 1;
+
+    //int x = 10, y = 10;
+    //Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
+    //Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
+    //Connected[Connected.site_xy(x+2,y+2)]=1, Connected[Connected.site_xy(x+3,y+2)]=1,Connected[Connected.site_xy(x+3,y+1)]=1, Connected[Connected.site_xy(x+3,y)]=1;
     
+    //int xp = x + 4;
+    //Connected[Connected.site_xy(xp,y)]=1, Connected[Connected.site_xy(xp+1,y)]=1, Connected[Connected.site_xy(xp+2,y)]=1;
+    //Connected[Connected.site_xy(xp+1,y+1)]=1, Connected[Connected.site_xy(xp+1,y+2)]=1;
+    //Connected[Connected.site_xy(xp+2,y+2)]=1, Connected[Connected.site_xy(xp+3,y+2)]=1,Connected[Connected.site_xy(xp+3,y+1)]=1, Connected[Connected.site_xy(xp+3,y)]=1;
+    
+    cout << Connected.NbrCC << "\n";
+
     Matrix Parameters = Connected.ClustersParameters();
 
     cout << Parameters;
 
-    Connected.Show_Connected_Components(2*10);
+    Connected.Show_Connected_Components(2*7);
     
 }
 
 int main(){
-    random_device rd;
-    mt19937 gen(rd());
+    
+    int nx = 30, ny = 30;
+    int Nparts = (nx*ny)/9;
 
-    uniform_real_distribution<double> dist(0, 100);
+    int N_Temps = 100;
+    int N_Steps = 10 * Nparts;
 
-    Darwin D = Darwin(10, 21, 0, 10, 100, 100);
+    int N_Stat = 10 * Nparts;
 
-    for(int i=0; i<10; i++){
-        D.Scores(i, 0) = dist(gen);
-    }
+    int pop = 10, NbrGenes = 21;
 
-    cout << D.Scores;
+    double mean = 0, stdev = 10;
 
-    D.Sort_Scores();
+    double acceptation = 0.88;
 
-    cout << D.Scores;
+    Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
-    swap(D.Scores(0,1), D.Scores(1,1));
+    D.Next_Generation(Nparts, N_Temps, N_Steps, N_Stat, "blabla.txt", acceptation);
+
+
 }

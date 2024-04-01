@@ -17,9 +17,12 @@ class Darwin{
     void Sort_Scores();
     void Data(const std::string Name) const;
     
-    Matrix couples(double proportion_parents, double acceptation ); //retourne la liste des positions des futurs parents 
-    Matrix Nouveaux_genes(int nbr_enfants, double proportion_enfants,Matrix Couples);
+    Matrix futurs_parents(const double acceptation) const;
+    Matrix couples(const Matrix& futurs_parents) const; //retourne la liste des positions des futurs parents 
+    void Nouveaux_genes(Matrix& futurs_parents,  Matrix& couples);
     
+    void Next_Generation(int Nparts, int N_Temps, int N_steps, int N_Stat, std::string Name, double acceptation);
+
     Darwin(int pop, int NbrGenes, double mean, double std, int nx, int ny);
     ~Darwin();
 

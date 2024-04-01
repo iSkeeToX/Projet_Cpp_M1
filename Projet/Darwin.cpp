@@ -6,11 +6,14 @@
 #include <cmath>
 #include <fstream>
 
+std::default_random_engine  re(time(0));
+
 //_____________________________Fonctions
 
 double recompense(Matrix MeanParameters){
-    MeanParameters(1,1);
-    return 1.5;
+    MeanParameters(0,1);
+    std::uniform_real_distribution<double> fitness(0,100);
+    return fitness(re);
 }
 
 //_____________________________Méthodes
@@ -22,7 +25,7 @@ void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N
 
     int k=0;
     for(int j=0; j < 6; j++){
-        for(int i=j; i< 6; i++){
+        for(int i=j; i < 6; i++){
             Ising.InteractionMap(i, j) = Genes(Individu, k);
             
             if( std::abs(Genes(Individu, k)) > T_0){
@@ -79,145 +82,167 @@ void Darwin::Data(const std::string Name) const{
     std::ofstream fich(Name);
 }
 
-
-
-
-
-
-
-
-
 //Creation des couples de parents
+Matrix Darwin::futurs_parents(const double acceptation) const{
+    
+    int i,j,k;
+    double acc;
 
-Matrix Darwin::couples(double proportion_parents, double acceptation ){
-    int i,j,k,l;
-    Matrix(Darwin.pop*proportion_parents/2,2) couples;
-    //Matrix(Darwin.pop/4,2) couples_deja_selectionnes;
-    //for(i=0,i<Darwin.pop/4,i++){
-        //couples_deja_selectionnes(i,0)=100;
-        //couples_deja_selectionnes(i,1)=100;
-    //}
-    Matrix(Darwin.pop*proportion_parents, 1) futurs_parents;
-    std::default_random_engine  re(time(0));
-    for(i=0;i<Darwin.pop*proportion_parents;i++){   // tournoi
-        k=std::uniform_int_distribution<int> distrib{  0,  Darwin.pop  };
-        j=std::uniform_int_distribution<int> distrib{  0,  Darwin.pop  };    
-         
-        if (Scores(k,0)>=Scores(j,0))
-            double acc= uniform_distribution<double> distrib{ 0, 1 };
-            if(acc>acceptation)
-                futurs_parents(i,0)=Scores(k,1);
-            else 
-                futurs_parents(i,0)=Scores(j,1);
-        else 
-            double acc= uniform_distribution<double> distrib{ 0, 1 };
-            if(acc>acceptation)
-                futurs_parents(i,0)=Scores(j,1);
-            else 
-                futurs_parents(i,0)=Scores(k,1);
+    
+    Matrix futurs_parents = Matrix(pop/2, 2); //2 juste pour pas refaire l'algo de sort
+    
+    std::uniform_int_distribution<int> Indidivu_Aleatoire(0, pop - 1);
+    std::uniform_real_distribution<double> Tirer_Proba_Acceptation(0, 1);
+    
+    for(i=0; i<pop/2; i++){   // tournoi
+        k=Indidivu_Aleatoire(re);
+        j=Indidivu_Aleatoire(re);    
+        acc= Tirer_Proba_Acceptation(re);
 
-            
+        if (Scores(k,0)>=Scores(j,0)){
+            if(acc > acceptation){
+                futurs_parents(i,0)=Scores(k,1);
+            }
+            else{ 
+                futurs_parents(i,0)=Scores(j,1);
+            }
         }
-    for(i=0;i<Darwin.pop*proportion_parents/2;i++){   // on considère négligeable la proba de tirer deux fois le même couple et même si c'était le cas pas forcéments mêmes enfants  
+        else{ 
+            if(acc > acceptation){
+                futurs_parents(i,0)=Scores(j,1);
+            }
+            else{ 
+                futurs_parents(i,0)=Scores(k,1);
+            }
+        }
+    }
+
+    return futurs_parents;
+}
+
+Matrix Darwin::couples(const Matrix& futurs_parents) const{
+    Matrix couples = Matrix(pop/4,2);
+    std::uniform_int_distribution<int> Tirage_Parent(0,  pop/2 - 1);
+    int k, j;
+
+    for(int i=0; i< pop/4 ; i++){   // on considère négligeable la proba de tirer deux fois le même couple et même si c'était le cas pas forcéments mêmes enfants  
         
-        k=std::uniform_int_distribution<int> distrib{  0,  Darwin.pop*proportions_parents  };
-        j=std::uniform_int_distribution<int> distrib{  0,  Darwin.pop*proportion_parents  };
+        k=Tirage_Parent(re);
+        j=Tirage_Parent(re);
 
         couples(i,0)=futurs_parents(k,0);
-        couples(i,0)=futurs_parents(j,0);
+        couples(i,1)=futurs_parents(j,0);
     
     }
 
-return couples;
-
-    
-    
-
+    return couples;
 }
-
-
 
 //Creation de la nouvelle génération de gênes
-
-void Darwin::Nouveaux_genes(int nbr_enfants, double proportion_enfants, Matrix couples){
+void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
     int i,j,k;
-    Matrix(2*couples.nx,21) Genes_enfants;
+
+    Matrix Genes_enfants = Matrix(2*couples.nx,21);
+    Matrix mixing = Matrix(21,1);
+    
+    Matrix enfant1 = Matrix(21,1);
+    Matrix enfant2 = Matrix(21,1);
+
+
+    std::uniform_int_distribution<int> Choix_Heredite(0, 1);
+    std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
+
     for(i=0;i<couples.nx;i++){
-        Matrix(21,1) mixing;
+        
+        
         for(j=0;j<21;j++){
-            mixing(j,0)=std::uniform_int_distribution<int> distrib{  0, 1  };
+            mixing(j,0)=Choix_Heredite(re);
         }
-        Matrix(21,1) enfant1;
-        Matrix(21,1) enfant2;
+       
+
         for(j=0;j<21;j++){
-        if(mixing(j,0)==1){
-            double mutation=uniform_distribution<double> distrib{  0, 1  }
-            if (mutation<0.001){
-                enfant1(j,0)=-Genes(couples(i,0),j);
+            if(mixing(j,0)==1){
+
+                if (Tirer_Proba_Mutation(re) < 0.001 ){
+                    enfant1(j,0)=-Genes(couples(i,0), j);
+                }
+                else{
+                    enfant1(j,0)=Genes(couples(i,0), j);  
+                }
+
+                if (Tirer_Proba_Mutation(re) < 0.001){
+                    enfant2(j,0)=-Genes(couples(i,1), j);
+                }
+                else{
+                    enfant2(j,0)=Genes(couples(i,1), j);
+                }
             }
             else{
-                enfant1(j,0)=Genes(couples(i,0),j);  
-            }
-            double mutation2=uniform_distribution<double> distrib{  0, 1  }
-            if (mutation2<0.001){
-                enfant2(j,0)=-Genes(couples(i,1),j);
-            }
-            else{
-                enfant2(j,0)=Genes(couples(i,1),j);
+
+                if (Tirer_Proba_Mutation(re) < 0.001){
+                     enfant1(j,0)=-Genes(couples(i,1), j);
+                }
+                else{
+                   enfant1(j,0)=Genes(couples(i,1), j);
+                }
+                if (Tirer_Proba_Mutation(re) < 0.001){
+                    enfant2(j,0)=-Genes(couples(i,0),j);  
+                }
+                else{
+                    enfant2(j,0)=Genes(couples(i,0),j);  
+                }          
             }
         
-        else{
-            double mutation3=uniform_distribution<double> distrib{  0, 1  }
-            if (mutation3<0.001){
-                enfant1(j,0)=-Genes(couples(i,1))
+            for(k=0;k<21;k++){
+                Genes_enfants(i,k)=enfant1(k,0);
+                Genes_enfants(i+1,k)=enfant2(k,0);
             }
-            else{
-                enfant1(j,0)=Genes(couples(i,1),j);
-            }
-            double mutation4=uniform_distribution<double> distrib{  0, 1  }
-            if (mutation4<0.001){
-
-                enfant2(j,0)=-Genes(couples(i,0),j);  
-            }
-            else{
-                enfant2(j,0)=Genes(couples(i,0),j);  
-            }          
-        }
-        }   
-        for(k=0;k<21;k++){
-            Genes_enfants(i,k)=enfant1(k,0);
-            Genes_enfants(i+1,k)=enfant1(k,0);
         }
     }
-    Matrix(pop*proportion_parents,0) indices_parents;
-    for(i=0;i<pop*proportion_parents;i++){ 
-        if (i%2==0){ 
-        indices_parents(i,0)=couples(i,0);
-        indices_parents(i+1,0)=couples(i,1);
-        }
-    for(i=0;i<pop;i++){
-        int iter=0;
-        for(j=0;j<pop*proportion_parents;j++){
-            if(j==indices_parents(j,0)){
-                continue
+
+    quicksort(futurs_parents, 0, futurs_parents.nx - 1);
+    k = 0;
+    for(j=0; j < 21; j++){
+        Genes(k, j) = Genes(futurs_parents(futurs_parents.nx - 1,0), j);
+    }
+    k++;
+
+    for(i=1; i<futurs_parents.nx; i++){
+        if (futurs_parents(futurs_parents.nx - i, 0) != futurs_parents(futurs_parents.nx - 1 - i, 0)){
+            for(j=0; j < 21; j++){
+                Genes(k, j) = Genes(futurs_parents(futurs_parents.nx - i - 1,0), j);
             }
-            else{
-                for(k=0;k<21;k++){
-                    Genes(i,k)=Genes_enfants(iter,0);
-                }
-                iter+=1;
-            }
+            k++;
         }
-
-
-
-        }
+    }
     
-        }   
-
+    for(i = 0; i < Genes_enfants.nx; i++){
+        for(j=0; j<21; j++){    
+            Genes(k + i, j);
+            //Genes_enfants(i, j);
+        }
     }
-
 }
+
+void Darwin::Next_Generation(int Nparts, int N_Temps, int N_Steps, int N_Stat, std::string Name, double acceptation){
+    
+    for(int Individu=0; Individu < pop; Individu++){
+        (*this).Simulation(Individu, Nparts, N_Temps, N_Steps, N_Stat);
+        std::cout << "L'individu " << Individu << "est simulé\n";
+    }
+    (*this).Sort_Scores();
+
+    (*this).Data(Name);
+    
+
+    Matrix Futurs_parents = (*this).futurs_parents(acceptation);
+    Matrix Couples = (*this).couples(Futurs_parents);
+
+    (*this).Nouveaux_genes(Futurs_parents, Couples);
+    generation++;
+}
+
+
 //_____________________________Le Constructeur de Darwin
 
 Darwin::Darwin(int pop, int NbrGenes, double mean, double std, int nx, int ny) : pop(pop), generation(0), NbrGenes(NbrGenes), Genes(Matrix(pop, NbrGenes, mean, std)), Scores(Matrix(pop,2)), Ising(IsingModel(nx, ny)){

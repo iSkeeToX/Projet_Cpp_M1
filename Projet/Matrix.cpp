@@ -72,7 +72,7 @@ Matrix Matrix::mean_columns() const{
 
     for(int j=0; j<ny; j++){
         for(int i=0; i < nx; i++){
-            Mean(1, j)+= (*this)(i,j) / ((double) nx);
+            Mean(0, j)+= (*this)(i,j) / ((double) nx);
         }
     }
 

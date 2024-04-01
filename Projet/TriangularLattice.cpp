@@ -575,7 +575,7 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
 
     for(int xp=0; xp < nx; xp++){
         for(int yp=0; yp < ny; yp++){
-            if((*this)[(*this).site_xy(x + xp, y + yp)] == ConCompNumber){
+           if((*this)[(*this).site_xy(x + xp, y + yp)] == ConCompNumber){
                 if(xp < xmin){
                     xmin = xp;
                 }
@@ -596,11 +596,10 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     ConComp Isolated = ConComp(xmax - xmin + 3 + shift, ymax - ymin + 3 + (ymax - ymin + 1)%2);
     Isolated.NbrCC = ConCompNumber;
 
-    
 
     for(int xp = 0; xp < xmax - xmin + 1; xp++){
-        for(int yp = 0; yp < ymax - ymin + 1; yp++){
-            if ((*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)] == ConCompNumber){
+       for(int yp = 0; yp < ymax - ymin + 1; yp++){
+          if ((*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)] == ConCompNumber){
                 Isolated[Isolated.site_xy(shift + 1 + xp, 1+yp)] = (*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)];
             }
         }
@@ -675,9 +674,9 @@ int ConComp::SizeOfHoles() const{
 //Parameters(CCN-1,i) -> param i de la CCN
 Matrix ConComp::ClustersParameters() const{
     Matrix Size = (*this).SizeConComps();//Size(CC-1,0)
-    Matrix Parameters = Matrix(NbrCC, 6);
+    Matrix Parameters = Matrix(NbrCC - 1, 6);
 
-    for(int CCN = 1; CCN < NbrCC+1; CCN++){
+    for(int CCN = 1; CCN < NbrCC; CCN++){
         ConComp Isolated = (*this).isolateConComp(CCN);
         int OuterSurface = Isolated.OuterBorderLength(Isolated.NbrCC);
 

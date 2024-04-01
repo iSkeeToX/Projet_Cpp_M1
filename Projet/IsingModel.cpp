@@ -292,14 +292,13 @@ void IsingModel::Annealing(const int N_T, const int N_steps){
         for(int i = 0; i < N_steps; i++){
             (*this).Metropolis_Step();
         }
-        std::cout << "beta : " << beta << "\n______________________\n";
+        
         T_0+=dT;
         beta = 1/T_0;
         steps++;
     }
 
     beta = 1;
-    std::cout << "Annealing terminé, beta = " << beta << "\n______________________\n";
 
 }
 
