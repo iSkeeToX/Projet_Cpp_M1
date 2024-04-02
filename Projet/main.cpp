@@ -92,6 +92,38 @@ void COnCompTest(){
     
 }
 
+void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, int N_Steps, int N_Stat){
+    ifstream fich(Name);
+
+    if (!fich.is_open()) {
+        std::cerr << "Error opening file: " << Name << std::endl;
+        return;
+    }
+    double mean, stdev, acceptation, fitness, meanfitness;
+    
+    fich >> mean >> stdev >> acceptation >> meanfitness >> fitness;
+
+    IsingModel Ising = IsingModel(nx, ny);
+    Ising.Initialise_Lattice(Nparts);
+
+    for(int j=0; j<6; j++){
+        for(int i=j; i<6; i++){
+            fich >> Ising.InteractionMap(i, j);
+        }
+    }
+
+    Ising.Annealing(N_Temps, N_Steps);
+
+    for(int k=0; k< N_Stat; k++){
+        Ising.Metropolis_Step();
+    }
+
+    Ising.TakePicture();    
+    
+    fich.close();
+
+}
+
 int main(){
     
     int nx = 30, ny = 30;
@@ -102,16 +134,18 @@ int main(){
 
     int N_Stat = 10 * Nparts;
 
-    int pop = 100, NbrGenes = 21;
+    //int pop = 100, NbrGenes = 21;
 
-    double mean = 0, stdev = 10;
+    //double mean = 0, stdev = 20;
 
-    double acceptation = 1;
+    //double acceptation = 1;
 
-    Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
+    //Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
-    for(int i=0; i<10; i++){
-        D.Next_Generation(Nparts, N_Temps, N_Steps, N_Stat, "blabla.txt", acceptation);
-    }
+    //for(int i=0; i<100; i++){
+    //    D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Fitness_Sortie_Du_Cul.txt", acceptation);
+    //}
+
+    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
 }

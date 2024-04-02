@@ -302,6 +302,21 @@ void IsingModel::Annealing(const int N_T, const int N_steps){
 
 }
 
+void IsingModel::TakePicture() const{
+    sf::RenderWindow window(sf::VideoMode(1200, 1080), "Selfie !");
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear(custom);
+        (*this).affiche_SFML(window, 2*10);
+        window.display();
+    }
+}
 
 
 

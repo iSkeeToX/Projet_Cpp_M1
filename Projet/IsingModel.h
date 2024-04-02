@@ -27,6 +27,8 @@ class IsingModel : public Lattice{
 
     void Annealing(const int N_T, const int N_steps, const float Taille, sf::RenderWindow& window);
     void Annealing(const int N_T, const int N_steps);
+
+    void TakePicture() const;
 };
 
 

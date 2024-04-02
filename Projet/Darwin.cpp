@@ -95,14 +95,15 @@ void Darwin::Sort_Scores(){
     quicksort(Scores, 0, pop-1, false, 0);
 }
 
-void Darwin::Data(const std::string Name) const{
+void Darwin::Data(const std::string Name, double mean_crea, double stdev_crea, double acceptation) const{
     if (!(std::filesystem::exists(Name))){
         std::ofstream fich(Name);
-        fich << "E(fitness); sigma(fitness); Generation; fitness1; Genes(Scores(0,1),:); fitness50; Genes(Scores(49,1),:); fitness100; Genes(Scores(99,1),:);\n";
+        fich << "mean;stdev;acceptation;E(fitness);sigma(fitness);Generation;fitness1;Genes(Scores(0,1),:);fitness50;Genes(Scores(49,1),:);fitness100;Genes(Scores(99,1),:)\n";
         fich.close();
     }
     std::ofstream fich(Name, std::ios_base::app);
     
+    fich << mean_crea << "; " << stdev_crea << "; " << acceptation << "; ";
     
     double mean = 0;
     for(int i=0; i<Scores.nx; i++){
@@ -285,7 +286,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
     }
 }
 
-void Darwin::Next_Generation(int Nparts, int N_Temps, int N_Steps, int N_Stat, std::string Name, double acceptation){
+void Darwin::Next_Generation(double mean, double stdev, int Nparts, int N_Temps, int N_Steps, int N_Stat, std::string Name, double acceptation){
     
     for(int Individu=0; Individu < pop; Individu++){
         if(Scores(Individu, 0) == 0){
@@ -301,7 +302,7 @@ void Darwin::Next_Generation(int Nparts, int N_Temps, int N_Steps, int N_Stat, s
     std::cout << "Simulation de la génération " << generation << " terminée\n";
     (*this).Sort_Scores();
 
-    (*this).Data(Name);
+    (*this).Data(Name, mean, stdev, acceptation);
     
     Matrix Futurs_parents = (*this).futurs_parents(acceptation);
     Matrix Couples = (*this).couples(Futurs_parents);
