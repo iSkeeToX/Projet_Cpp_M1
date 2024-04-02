@@ -101,24 +101,28 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
     }
     double mean, stdev, acceptation, fitness, meanfitness;
     
-    fich >> mean >> stdev >> acceptation >> meanfitness >> fitness;
-
+    fich >> mean >> stdev >> acceptation;
+    
     IsingModel Ising = IsingModel(nx, ny);
-    Ising.Initialise_Lattice(Nparts);
+    
+    for(int k = 0; k<3; k++){
+        Ising.Initialise_Lattice(Nparts);
 
-    for(int j=0; j<6; j++){
-        for(int i=j; i<6; i++){
-            fich >> Ising.InteractionMap(i, j);
+        for(int j=0; j<6; j++){
+            for(int i=j; i<6; i++){
+                fich >> Ising.InteractionMap(i, j);
+            }
         }
+
+        Ising.Annealing(N_Temps, N_Steps);
+
+        for(int k=0; k< N_Stat; k++){
+            Ising.Metropolis_Step();
+        }
+
+        Ising.TakePicture();    
+        Ising.Vider_Lattice();
     }
-
-    Ising.Annealing(N_Temps, N_Steps);
-
-    for(int k=0; k< N_Stat; k++){
-        Ising.Metropolis_Step();
-    }
-
-    Ising.TakePicture();    
     
     fich.close();
 
