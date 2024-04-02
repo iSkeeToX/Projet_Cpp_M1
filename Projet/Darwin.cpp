@@ -10,7 +10,7 @@ std::default_random_engine  re(time(0));
 
 //_____________________________Fonctions
 
-double recompense(Matrix MeanParameters){
+double recompense(const Matrix& MeanParameters){
     double Size = MeanParameters(0,0);
     double SizeHoles = MeanParameters(0,1);
     double Vol = MeanParameters(0, 2);
@@ -18,9 +18,9 @@ double recompense(Matrix MeanParameters){
     //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
     double Sphericity = MeanParameters(0, 5);
     
-    return -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
+    return 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
 }
-
+//Fitness Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)
 //_____________________________Méthodes
 
 void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N_Stats){
@@ -196,53 +196,41 @@ Matrix Darwin::couples(const Matrix& futurs_parents) const{
 }
 
 //Creation de la nouvelle génération de gênes
-void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
+void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean, double stdev){
     int i,j,k;
 
     Matrix Genes_enfants = Matrix(2*couples.nx,21);
-    Matrix mixing = Matrix(21,1);
 
     Matrix enfant1 = Matrix(21,1);
     Matrix enfant2 = Matrix(21,1);
 
-
+    std::normal_distribution<double> Normal(mean, stdev);
     std::uniform_int_distribution<int> Choix_Heredite(0, 1);
     std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
 
-    int shift = 0;
+    int shift = 0, choix_parent;
     for(i=0;i<couples.nx;i++){        
         for(j=0;j<21;j++){
-            mixing(j, 0) = Choix_Heredite(re);
-            if( mixing(j, 0) == 1){
+            choix_parent = Choix_Heredite(re);
 
-                if (Tirer_Proba_Mutation(re) < 0.001 ){
-                    enfant1(j,0)=-Genes(couples(i,0), j);
-                }
-                else{
-                    enfant1(j,0)=Genes(couples(i,0), j);  
-                }
-
-                if (Tirer_Proba_Mutation(re) < 0.001){
-                    enfant2(j,0)=-Genes(couples(i,1), j);
-                }
-                else{
-                    enfant2(j,0)=Genes(couples(i,1), j);
-                }
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant1(j, 0) = Normal(re);
+            }
+            else if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant1(j, 0) = -Genes(couples(i, choix_parent), j);
             }
             else{
+                enfant1(j, 0) = Genes(couples(i, choix_parent), j);
+            }
 
-                if (Tirer_Proba_Mutation(re) < 0.001){
-                    enfant1(j,0)=-Genes(couples(i,1), j);
-                }
-                else{
-                   enfant1(j,0)=Genes(couples(i,1), j);
-                }
-                if (Tirer_Proba_Mutation(re) < 0.001){
-                    enfant2(j,0)=-Genes(couples(i,0),j);  
-                }
-                else{
-                    enfant2(j,0)=Genes(couples(i,0),j);  
-                }          
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant2(j, 0) = Normal(re);
+            }
+            else if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant2(j, 0) = -Genes(couples(i, 1-choix_parent), j);
+            }
+            else{
+                enfant2(j, 0) = Genes(couples(i, 1-choix_parent), j);
             }
         }
 
@@ -263,6 +251,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
     Scores(k, 1) = k;
     k++;
 
+    //Individus vainqueurs de Hunger Games
     for(i=1; i<futurs_parents.nx; i++){
         if (futurs_parents(i, 0) != futurs_parents(i-1, 0)){
             for(j=0; j < 21; j++){
@@ -274,6 +263,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
         }
     }
     
+    //Individus créés par les vainqueurs
     for(i = 0; i < Genes_enfants.nx; i++){
         for(j=0; j<21; j++){    
             Genes(k + i, j) = Genes_enfants(i, j);
@@ -281,8 +271,13 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples){
         Scores(k + i, 0) = 0;
     }
 
+    //Potentiel reste d'individus si l'on a tiré 2 fois le même parent dans le tournoi
     for(i = k + Genes_enfants.nx; i<pop; i++){
+        for(int j=0; j < 21; j++){
+            Genes(i, j) = Normal(re);
+        }
         Scores(i, 1) = i;
+        Scores(i, 0) = 0;
     }
 }
 
@@ -307,7 +302,7 @@ void Darwin::Next_Generation(double mean, double stdev, int Nparts, int N_Temps,
     Matrix Futurs_parents = (*this).futurs_parents(acceptation);
     Matrix Couples = (*this).couples(Futurs_parents);
 
-    (*this).Nouveaux_genes(Futurs_parents, Couples);
+    (*this).Nouveaux_genes(Futurs_parents, Couples, mean, stdev);
     std::cout << "La génération " << generation << " a enfanté la prochaine génération\n";
     generation++;
 }

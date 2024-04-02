@@ -102,10 +102,11 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
     double mean, stdev, acceptation, fitness, meanfitness;
     
     fich >> mean >> stdev >> acceptation;
-    
-    IsingModel Ising = IsingModel(nx, ny);
-    
+     
     for(int k = 0; k<3; k++){
+        IsingModel Ising = IsingModel(nx, ny);
+        fich >> meanfitness >> fitness;
+        
         Ising.Initialise_Lattice(Nparts);
 
         for(int j=0; j<6; j++){
@@ -119,9 +120,10 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
         for(int k=0; k< N_Stat; k++){
             Ising.Metropolis_Step();
         }
-
-        Ising.TakePicture();    
-        Ising.Vider_Lattice();
+        
+        cout << "Fitness : " << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
+        cout << "Fitness Simul : " << fitness << '\n';
+        Ising.TakePicture();
     }
     
     fich.close();
@@ -136,20 +138,36 @@ int main(){
     int N_Temps = 100;
     int N_Steps = 10 * Nparts;
 
-    int N_Stat = 10 * Nparts;
+    int N_Stat = 100 * Nparts;
 
-    //int pop = 100, NbrGenes = 21;
+    int pop = 100, NbrGenes = 21;
 
     //double mean = 0, stdev = 20;
 
-    //double acceptation = 1;
+    double acceptation = 0.9;
 
-    //Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
+    double stdev = 10;
+    for(double mean : {-10, 0, 10}){
+        cout << "mean : " << mean << "stdev : " << stdev << "\n";
+        Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
-    //for(int i=0; i<100; i++){
-    //    D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Fitness_Sortie_Du_Cul.txt", acceptation);
-    //}
+        for(int i=0; i<100; i++){
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Sigmoide_Du_Cul.txt", acceptation);
+        }
+    }
 
-    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    double stdev = 8;
+    for(double mean : {-5, 0, 5}){
+        cout << "mean : " << mean << "stdev : " << stdev << "\n";
+        Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
+
+        for(int i=0; i<100; i++){
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Sigmoide_Du_Cul.txt", acceptation);
+        }
+    }
+    
+    
+
+    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
 }

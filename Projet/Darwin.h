@@ -19,7 +19,7 @@ class Darwin{
     
     Matrix futurs_parents(const double acceptation) const;
     Matrix couples(const Matrix& futurs_parents) const; //retourne la liste des positions des futurs parents 
-    void Nouveaux_genes(Matrix& futurs_parents,  Matrix& couples);
+    void Nouveaux_genes(Matrix& futurs_parents,  Matrix& couples, double mean, double stdev);
     
     void Next_Generation(double mean, double stdev, int Nparts, int N_Temps, int N_steps, int N_Stat, std::string Name, double acceptation);
 
@@ -29,7 +29,7 @@ class Darwin{
 
 };
 
-
+double recompense(const Matrix& MeanParameters);
 
 
 
