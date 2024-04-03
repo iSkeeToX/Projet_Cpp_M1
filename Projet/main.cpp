@@ -14,11 +14,56 @@ using namespace std;
 
 #include<random>
 
+//Cette fonction illustre une simulation typique d'un individu avec l'algorithme de Monte-Carlo
+void Metropolis(){
+    int nx=50, ny=50;
+    int Nparts = (nx*ny)/9;
+
+    float taille = 10;
+
+    IsingModel Ising = IsingModel(nx, ny);
+
+    int N_T = 100; //Number of temperatures
+    int N_Steps = 10 * (nx * ny); //Number of steps by temperature
+    int N_Stats = 100 *(nx*ny); //Number of steps on which we "average"
+
+    Ising.Gaussian_InteractionMap(0, 10);
+
+    cout << "Carte d'interaction : " << Ising.InteractionMap;
+
+    Ising.Initialise_Lattice(Nparts);
+
+    sf::Color custom(127, 127, 127, 255); //Gris 
+    sf::RenderWindow Window(sf::VideoMode(880, 760), "Illustration Algorithme de Monte-Carlo (Annealing)");
+    
+    Ising.Annealing(N_T, N_Steps, taille, Window);
+
+    int step = 0;
+
+    sf::RenderWindow window(sf::VideoMode(880,760), "Illustration Algorithme de Monte-Carlo");
+    while((window.isOpen())){
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        
+        window.clear(custom);
+        for(int i = 0; (i < pow(10, 4)) && (step < N_Stats); i++){
+            Ising.Metropolis_Step();
+            step++;
+        }
+        Ising.affiche_SFML(window, taille);
+        window.display();
+    }
+}
+
+
 void FaitTournerMetropolis() {
     
     int nx=256, ny=256;
     int Nparts=(nx*ny)/9;
-    float Taille=8;
+    //float Taille=8;
 
     IsingModel Ising=IsingModel(nx, ny);
     Ising.Initialise_Lattice(Nparts);
@@ -36,8 +81,8 @@ void FaitTournerMetropolis() {
     sf::RenderWindow window(sf::VideoMode(1500,900), "Mon super projet");
 
     //Ising.beta = ...
-    //Ising.Annealing(N_T, N_steps);
-    Ising.Annealing(N_T, N_steps, Taille, window);
+    Ising.Annealing(N_T, N_steps);
+    //Ising.Annealing(N_T, N_steps, Taille, window);
     
     Ising.Metropolis_Step();
 }
@@ -129,7 +174,7 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
 
 }
 
-int main(){
+void maint(){
     
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -169,4 +214,31 @@ int main(){
 
     //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
+}
+
+void mmain(){
+    int nx = 30, ny = 30;
+    int Nparts = (nx*ny)/9;
+
+    int N_Temps = 100;
+    int N_Steps = 10 * Nparts;
+
+    int N_Stat = 100 * Nparts;
+
+    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+}
+
+int main(){
+    //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
+    //Metropolis();
+
+    int nx = 30, ny = 30;
+    int Nparts = (nx*ny)/9;
+
+    int N_Temps = 100;
+    int N_Steps = 10 * Nparts;
+
+    int N_Stat = 100 * Nparts;
+
+    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 }

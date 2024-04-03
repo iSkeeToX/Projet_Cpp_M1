@@ -141,7 +141,9 @@ Matrix  IsingModel::Second_Voisin_Face_Count() const{
     return N_faces_second_voisin;
 }
 
-
+//Renvoie une matrice Faces telle que InteractionMap(Faces(i,0), Faces(i, 1)) Renvoie l'énergie d'interaction
+//de la particule située au Site s avec son ième voisin en tournant dans le sens trigo
+//Cette version permet aussi de stocker les indices (i) des sites vides autour du Site s
 Matrix IsingModel::Contact_Faces(const Site s, std::vector<int>& EmptySites) const{
     Matrix Faces = Matrix(6,2);
     int face=0;
@@ -166,6 +168,8 @@ Matrix IsingModel::Contact_Faces(const Site s, std::vector<int>& EmptySites) con
     return Faces;
 }
 
+//Renvoie une matrice Faces telle que InteractionMap(Faces(i,0), Faces(i, 1)) Renvoie l'énergie d'interaction
+//de la particule située au Site s avec son ième voisin en tournant dans le sens trigo
 Matrix IsingModel::Contact_Faces(const Site s) const{
     Matrix Faces = Matrix(6,2);
     int face=0;
@@ -189,6 +193,9 @@ Matrix IsingModel::Contact_Faces(const Site s) const{
     return Faces;
 }
 
+//Effectue une itération de l'algorithme de Métropolis
+//Notre pas élémentaire est le suivant :
+//Proba 1/2 de se déplacer sur un site voisin vide (si disponible)/Proba 1/2 de changer d'orientation
 void IsingModel::Metropolis_Step(){
     std::random_device rd;
     std::mt19937 gen(rd()); 
@@ -210,7 +217,7 @@ void IsingModel::Metropolis_Step(){
         }
     }
 
-
+    //Proposition de pas élémentaire
     std::uniform_real_distribution<float> distribution(0, 1);
     float MoveOrSpin = distribution(gen);
     
@@ -236,7 +243,7 @@ void IsingModel::Metropolis_Step(){
     }
 
 
-    //Calcul de la contribution du spin modifié
+    //Calcul de la contribution du spin modifié à l'énergie
     Matrix FacesFinal = (*this).Contact_Faces(NewLocation);
     for(int i=0;i<6;i++){
         if (FacesFinal(i,0) >= 0){
@@ -244,6 +251,7 @@ void IsingModel::Metropolis_Step(){
         }
     } 
 
+    //Proba d'acceptation du pas élémentaire
     double ProbaAccept=exp(-beta*DeltaE);
     
     if (distribution(gen) < ProbaAccept){
@@ -257,40 +265,8 @@ void IsingModel::Metropolis_Step(){
     }
 }
 
-void IsingModel::Annealing(const int N_T, const int N_steps, const float Taille, sf::RenderWindow& window){
-
-    sf::Clock waitClock;
-    beta = 1./N_T;
-
-    int steps = 0;
-
-    while((window.isOpen())){
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-        
-        window.clear(custom);
-        for(int i = 0; (i < N_steps) && (steps < N_T); i++){
-            (*this).Metropolis_Step();
-        }
-        (*this).affiche_SFML(window, Taille);
-        window.display();
-        
-        if(steps < N_T){
-        std::cout << "beta : " << beta << "\n______________________\n";
-        beta+=1./N_T;
-        steps++;
-        }
-    }
-    
-
-    beta = 1;
-    std::cout << "Annealing terminé, beta = " << beta << "\n______________________\n";
-
-}
-
+//L'Annealing permet de briser, au début de la simulation les plus grandes barrières énergétiques
+//Cela permet de pas être contraint de conserver une liaison car nous n'avons pas l'énergie de la briser
 void IsingModel::Annealing(const int N_T, const int N_steps){
 
     double T_0 = 1/beta;
@@ -311,6 +287,51 @@ void IsingModel::Annealing(const int N_T, const int N_steps){
 
 }
 
+void IsingModel::Annealing(const int N_T, const int N_steps, const float Taille, sf::RenderWindow& window){
+    double T_0 = 0;
+
+    for(int j=0; j < 6; j++){
+        for(int i=j; i<6; i++){
+            T_0 = std::max(T_0, (double) abs((*this).InteractionMap(i,j)));
+        }
+    }
+
+    double dT = (1 - T_0)/(N_T - 1);
+    beta = 1/T_0;
+
+    int Temp_steps = 0;
+
+    while((window.isOpen())){
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        
+        window.clear(custom);
+        for(int i = 0; (i < N_steps) && (Temp_steps < N_T); i++){
+            (*this).Metropolis_Step();
+        }
+        (*this).affiche_SFML(window, Taille);
+        window.display();
+        
+        if(Temp_steps < N_T){
+            T_0+=dT;
+            beta = 1/T_0;
+            Temp_steps++;
+        }
+
+        if(Temp_steps == N_T){
+            window.close();
+        }
+    }
+    
+    beta = 1;
+    std::cout << "Annealing terminé, beta = " << beta << "\n______________________\n";
+
+}
+
+//Permet de faire des photos d'un Individu dans notre algorithme générationnel afin de contrôler visuellement
 void IsingModel::TakePicture() const{
     sf::RenderWindow window(sf::VideoMode(1200, 1080), "Selfie !");
 
@@ -326,27 +347,4 @@ void IsingModel::TakePicture() const{
         window.display();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

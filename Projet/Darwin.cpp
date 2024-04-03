@@ -6,10 +6,14 @@
 #include <cmath>
 #include <fstream>
 #include <filesystem> //Check if a file exist in the current directory
+
 std::default_random_engine  re(time(0));
 
 //_____________________________Fonctions
 
+//Fonction fitness, cette fonction est cruciale pour le bon fonctionnement de l'algorithme générationnel
+//Elle permet de noter les différents individus, nous avons choisi d'essayer de la maximiser
+//Malheureusement, il n'y a pas de méthode générale pour créer une fonction de récompense, nous devons alors tatonner
 double recompense(const Matrix& MeanParameters){
     double Size = MeanParameters(0,0);
     double SizeHoles = MeanParameters(0,1);
@@ -23,8 +27,11 @@ double recompense(const Matrix& MeanParameters){
 
 //Fitness_Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 //Sigmoide_Du_Cul 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
+
 //_____________________________Méthodes
 
+//Simulation d'un individu de la population
+//Initialisation du Lattice -> Acquisition de la carte d'interaction -> Simulation avec Métropolis -> Calcul de la Fitness
 void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N_Stats){
 
     Ising.Initialise_Lattice(Nparts);
@@ -55,6 +62,7 @@ void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N
     Ising.Vider_Lattice();
 }
 
+//Choix du pivot pour quicksort (Algo de tri)
 int Pivot(Matrix& Scores, int low, int high, bool Ascending, int column){
     double pivot = Scores(high, column);
     int i = low - 1;
@@ -97,10 +105,11 @@ void Darwin::Sort_Scores(){
     quicksort(Scores, 0, pop-1, false, 0);
 }
 
+//Enregistre des données dans un ficher texte
 void Darwin::Data(const std::string Name, double mean_crea, double stdev_crea, double acceptation) const{
     if (!(std::filesystem::exists(Name))){
         std::ofstream fich(Name);
-        fich << "mean;stdev;acceptation;E(fitness);sigma(fitness);Generation;fitness1;Genes(Scores(0,1),:);fitness50;Genes(Scores(49,1),:);fitness100;Genes(Scores(99,1),:)\n";
+        fich << "mean;stdev;acceptation;E(fitness);sigma(fitness);Generation;fitness1;Genes(Scores(0,1),:);fitness50;Genes(Scores(49,1),:);fitness100;Genes(Scores(99,1),:);\n";
         fich.close();
     }
     std::ofstream fich(Name, std::ios_base::app);
@@ -126,13 +135,13 @@ void Darwin::Data(const std::string Name, double mean_crea, double stdev_crea, d
     for(int i=0; i<Genes.ny; i++){
         fich << Genes(index, i) << ", ";
     }
-    fich << "]; " << Scores(pop/2 - 1, 0) << "; ";
+    fich << "]; " << Scores(pop/2 - 1, 0) << "; [";
 
     index = Scores(pop/2 - 1, 1);
     for(int i=0; i<NbrGenes; i++){
         fich << Genes(index, i) << ", ";
     }
-    fich << "]; " << Scores(pop - 1, 0) << "; ";
+    fich << "]; " << Scores(pop - 1, 0) << "; [";
 
     index = Scores(pop - 1, 1);
     for(int i=0; i<NbrGenes; i++){
@@ -141,7 +150,8 @@ void Darwin::Data(const std::string Name, double mean_crea, double stdev_crea, d
     fich << "];\n";
 }
 
-//Creation des couples de parents
+//Les Individus que l'on conserve sont sélectionnés grâce à une méthode du tournoi
+//(Voir rapport)
 Matrix Darwin::futurs_parents(const double acceptation) const{
     
     int i,j,k;
@@ -179,6 +189,7 @@ Matrix Darwin::futurs_parents(const double acceptation) const{
     return futurs_parents;
 }
 
+//on tire avec remise nos couples de parents
 Matrix Darwin::couples(const Matrix& futurs_parents) const{
     Matrix couples = Matrix(pop/4,2);
     std::uniform_int_distribution<int> Tirage_Parent(0,  pop/2 - 1);
@@ -283,6 +294,7 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean
     }
 }
 
+//Simule une génération et la remplace par la suivante
 void Darwin::Next_Generation(double mean, double stdev, int Nparts, int N_Temps, int N_Steps, int N_Stat, std::string Name, double acceptation){
     
     for(int Individu=0; Individu < pop; Individu++){
