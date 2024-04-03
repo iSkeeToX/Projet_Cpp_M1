@@ -18,9 +18,11 @@ double recompense(const Matrix& MeanParameters){
     //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
     double Sphericity = MeanParameters(0, 5);
     
-    return 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
+    return -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 }
-//Fitness Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)
+
+//Fitness_Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
+//Sigmoide_Du_Cul 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
 //_____________________________Méthodes
 
 void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N_Stats){

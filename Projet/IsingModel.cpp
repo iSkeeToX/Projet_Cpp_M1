@@ -9,13 +9,17 @@
 sf::Color custom(127, 127, 127, 255); //Gris 
 
 
-//Initialise le lattice avec Nparticules ainsi que la matrice Nparts*2 contenant les coordonnées des particules (x,y)
+//Initialise le Lattice avec Nparticules ainsi que la matrice Nparts*2 contenant les coordonnées des particules (x,y)
 void IsingModel::Initialise_Lattice(const int Nparts) {
     
+    if (Nparts > nx*ny){
+        throw std::invalid_argument("You have too many particles, consider giving some to charity !");
+    }
+
     Particles = Matrix(Nparts,2);
     
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()  
+    std::random_device rd; 
+    std::mt19937 gen(rd());
 
     std::uniform_int_distribution<int8_t> orientation(1, 6);
     std::uniform_int_distribution<int> SiteAlea(0, nx*ny-1);
@@ -39,23 +43,27 @@ void IsingModel::Initialise_Lattice(const int Nparts) {
 
 }
 
-//Tire une Carte d'interaction suivant une loi normale
-void IsingModel::Gaussian_InteractionMap(const float mean, const float standard_deviation){
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::normal_distribution<double> distribution(mean, standard_deviation);
+//Tire une Carte d'interaction aléatoirement suivant une loi normale N(mean, stdev)
+void IsingModel::Gaussian_InteractionMap(const float mean, const float stdev){
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::normal_distribution<double> Gaussian(mean, stdev);
 
     for(int j=0;j<6;j++){
         for(int i=j; i<6;i++){
-            InteractionMap(i,j) = distribution(gen);
+            InteractionMap(i,j) = Gaussian(gen);
         }
     }
 }
 
+//Retire toutes les particules d'un Lattice
 void IsingModel::Vider_Lattice(){
     for(int i=0; i < Particles.nx; i++){
         (*this)[(*this).site_xy(Particles(i,0), Particles(i, 1))] = 0;
     }
+
+    Particles = Matrix(0, 0);
 }
 
 
@@ -77,7 +85,7 @@ void IsingModel::Pos_Particules(){
     }
 }
 
-//Renvoie la matrice 6*6 contenant le nombre d'occurence de chaque face (1er voisins)
+//Renvoie la matrice 6*6 contenant le nombre d'occurence de chaque paire de face (1er voisins de contact)
 Matrix IsingModel::Voisin_Face_Count() const{
     Matrix N_faces=Matrix(6,6);
     int site = 0, i, j;
@@ -105,7 +113,7 @@ Matrix IsingModel::Voisin_Face_Count() const{
     return N_faces;
 }
 
-//Renvoie la matrice 6*6 contenant le nombre d'occurence de chaque face (2nd voisins)
+//Renvoie la matrice 6*6 contenant le nombre d'occurence de chaque face (2nd voisins de contact)
 Matrix  IsingModel::Second_Voisin_Face_Count() const{
     Matrix N_faces_second_voisin=Matrix(6,6);
     int site = 0, i, j;
@@ -133,10 +141,11 @@ Matrix  IsingModel::Second_Voisin_Face_Count() const{
     return N_faces_second_voisin;
 }
 
+
 Matrix IsingModel::Contact_Faces(const Site s, std::vector<int>& EmptySites) const{
     Matrix Faces = Matrix(6,2);
     int face=0;
-    int max = 0,min = 0;
+    int max = 0, min = 0;
 
     int site = (int) (*this)[s];
 
@@ -181,8 +190,8 @@ Matrix IsingModel::Contact_Faces(const Site s) const{
 }
 
 void IsingModel::Metropolis_Step(){
-    std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+    std::random_device rd;
+    std::mt19937 gen(rd()); 
     std::uniform_int_distribution<int> RandomParticle(0, Particles.nx-1);
     
     int Particle_Number = RandomParticle(gen);

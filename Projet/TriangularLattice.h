@@ -19,17 +19,24 @@ class Site{
         Site () = default;
 };
 
+//La Classe Lattice est une classe nous permettant de créer un réseau triangulaire sur lequel siègent
+//des hexagones réguliers qui peuvent se déplacer et s'orienter selon 6 directions (k\pi/3).
+//
+//Un site vide est repéré par un 0
+//Un site occupé est repéré par un entier k compris entre 1 et 6 repérant son orientation (k\pi/3)
+//par rapport à un axe horizontal orienté vers la droite
+//
+//Les données sont stockées dans un entier signé sur 8 bits permettant de réduire l'occupation de la mémoire
 class Lattice{
     public:
     int nx,ny;
 
     void afficher() const;
-    void affiche_SFML(sf::RenderWindow& window, float a) const;
-    void write(std::string Name) const;
+    void affiche_SFML(sf::RenderWindow& window,const float a) const;
 
-    Site site_xy(int x, int y) const;
+    Site site_xy(const int x,const int y) const;
     Site site_aleatoire() const;
-    Site site_index(int index) const; 
+    Site site_index(const int index) const; 
 
     std::array<Site,6> voisins(const Site s) const; 
     std::array<Site,6> second_voisins(const Site s) const;
@@ -43,7 +50,6 @@ class Lattice{
     void Metropolis_Step(Lattice& L, Matrix& Particles, const Matrix& InteractionMap, const double beta);
     Lattice Renormalisation() const;
     
-    //Crée un réseau triangulaire
     Lattice(int nx, int ny);
     ~Lattice();
 
@@ -68,7 +74,6 @@ class ConComp{
     public:
     int nx, ny, NbrCC;
 
-    void write(const std::string Name) const;
     void Show_Connected_Components(const float a) const;
 
     SiteC site_xy(int x, int y) const;

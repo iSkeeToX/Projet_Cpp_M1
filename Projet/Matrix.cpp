@@ -8,7 +8,6 @@
 std::random_device rdd;
 std::mt19937 genn(rdd());
 
-
 //_____________________________Fonctions
 
 double Trace(const Matrix& M){
@@ -24,6 +23,7 @@ double Prodscal(const Matrix& A,const Matrix& B){
     return Trace(At*B);
 }
 //_____________________________Méthodes
+
 void Matrix::afficher() const{
     
     for(int i=0; i<nx; i++){
@@ -34,6 +34,7 @@ void Matrix::afficher() const{
     };
 }
 
+//Transposition : M(i,j) -> M(j,i)
 Matrix& Matrix::T() const {
     Matrix* Mt = new Matrix(ny, nx);
 
@@ -46,7 +47,8 @@ Matrix& Matrix::T() const {
     return *Mt;
 }
 
-void Matrix::add_rows(const Matrix& other){
+//Colle la matrice other en dessous de this
+void Matrix::vstack(const Matrix& other){
     if (ny != other.ny){
         throw std::invalid_argument("Matrices must have the same number of columns to be concatenated");
     }
@@ -67,6 +69,7 @@ void Matrix::add_rows(const Matrix& other){
     nx+= other.nx;
 }
 
+//Renvoie une matrice 1*ny contenant les moyennes de chaque colonne 
 Matrix Matrix::mean_columns() const{
     Matrix Mean = Matrix(1, ny);
 
@@ -97,8 +100,9 @@ Matrix::Matrix(const Matrix& other) : nx(other.nx), ny(other.ny), data(nullptr){
     }
 }
 
-Matrix::Matrix(int nx, int ny, double mean, double std) : nx(nx), ny(ny), data(nullptr){
-    std::normal_distribution<double> Gaussian(mean, std);
+//Génère une matrice dont les coefficients sont tirés suivant une loi normale N(mean, stdev)
+Matrix::Matrix(int nx, int ny, double mean, double stdev) : nx(nx), ny(ny), data(nullptr){
+    std::normal_distribution<double> Gaussian(mean, stdev);
 
     data = new double[nx*ny];
     for(int k=0; k<nx*ny; k++){
@@ -216,6 +220,7 @@ Matrix Matrix::operator*(const double& scalar){
     return Result;
 }
 
+//Surcharge de l'operateur << pour effectuer "std::cout << M;" Pratique !
 std::ostream& operator<<(std::ostream& os, const Matrix& M){
     os << "\n";
     for(int i=0; i< M.nx; i++){
@@ -228,4 +233,4 @@ std::ostream& operator<<(std::ostream& os, const Matrix& M){
 
     return os;
 }
-//_____________________________Constructeur TriangularMatrix
+

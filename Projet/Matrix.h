@@ -11,7 +11,7 @@ class Matrix{
 
     Matrix& T() const;
     
-    void add_rows(const Matrix& other);
+    void vstack(const Matrix& other);
     Matrix mean_columns() const;
 
 
@@ -36,14 +36,6 @@ class Matrix{
 
     private:
     double* data;
-};
-
-class TriangularMatrix : public Matrix {
-
-
-
-
-
 };
 
 double Trace(const Matrix& M);

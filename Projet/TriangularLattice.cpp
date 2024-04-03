@@ -6,8 +6,21 @@
 #include <algorithm> //min,max
 #include <fstream>
 
-std::random_device rd;  // Will be used to obtain a seed for the random number engine
-std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+std::random_device rd;
+std::mt19937 gen(rd());
+
+//__________________________________________________________Classe Lattice__________________________________________________________\\
+
+
+//La Classe Lattice est une classe nous permettant de créer un réseau triangulaire sur lequel siègent
+//des hexagones réguliers qui peuvent se déplacer et s'orienter selon 6 directions (k\pi/3).
+//
+//Un site vide est repéré par un 0
+//Un site occupé est repéré par un entier k compris entre 1 et 6 repérant son orientation (k\pi/3)
+//par rapport à un axe horizontal orienté vers la droite
+//
+//Les données sont stockées dans un entier signé sur 8 bits, cela permet de réduire l'occupation de la mémoire
+
 
 //_____________________________Méthodes
 
@@ -24,6 +37,7 @@ void Lattice::afficher() const{
    };
 }
 
+//Crée un hexagone de côté a pixels
 void hexagon(sf::RenderWindow& window, int8_t phi0, float a, float pos_x, float pos_y){
 
     sf::ConvexShape triangle;
@@ -46,7 +60,8 @@ void hexagon(sf::RenderWindow& window, int8_t phi0, float a, float pos_x, float 
     }
 }
 
-void Lattice::affiche_SFML(sf::RenderWindow& window, float a) const{
+//Affiche le Lattice dans une window SFML, les sites occupés contiennent des hexagones définis ci-dessus
+void Lattice::affiche_SFML(sf::RenderWindow& window,const float a) const{
     float taille=a*sqrt(3)/2;
 
     for(int i=0;i<nx;i++){
@@ -59,18 +74,9 @@ void Lattice::affiche_SFML(sf::RenderWindow& window, float a) const{
     }
 }
 
-void Lattice::write(std::string Name) const{
-    std::ofstream fich(Name);
-
-    for(int k=0;k<nx*ny;k++){
-        if(k > 0 && k%ny == 0){
-            fich << "\n";
-        }
-        fich << (int) data[k] << " ";
-    }
-}
-
-Site Lattice::site_xy(int x, int y) const{
+//Permet d'accéder au site (x,y) du Lattice
+//Les conditions aux limites périodiques de Born-Von Kármán sont implémentées ici
+Site Lattice::site_xy(const int x,const int y) const{
     int xm=x%nx;
     int ym=y%ny;
     if (xm < 0 && ym < 0){
@@ -90,6 +96,7 @@ Site Lattice::site_xy(int x, int y) const{
     }
 }
 
+//Permet de tirer un site aléatoirement
 Site Lattice::site_aleatoire() const{
     
     std::uniform_int_distribution<int> distribution(0, nx*ny);
@@ -104,8 +111,9 @@ Site Lattice::site_aleatoire() const{
     }
 }
 
-//index=ny*x+y
-Site Lattice::site_index(int index) const{
+//Permet d'accéder au site situé à la k-ème position dans le pointeur
+//double* data,  k = ny*x+y
+Site Lattice::site_index(const int index) const{
     int y=index%ny;
     if(y < 0){
         return Site(index,index/ny,y+ny);
@@ -115,6 +123,7 @@ Site Lattice::site_index(int index) const{
     }
 }
 
+//Renvoie une liste des premiers voisins de contact du Site s (définis dans la partie Renormalisation du rapport)
 //Tourne dans le sens trigo, en partant de la droite
 std::array<Site,6> Lattice::voisins(const Site s) const{
     int x=s._x, y=s._y;
@@ -126,6 +135,7 @@ std::array<Site,6> Lattice::voisins(const Site s) const{
     }
 }
 
+//Renvoie une liste des seconds voisins de contact du Site s (définis dans la partie Renormalisation du rapport)
 //Tourne dans le sens trigo, en partant de la droite
 std::array<Site,6> Lattice::second_voisins(const Site s) const{
     int x=s._x, y=s._y;
@@ -137,6 +147,8 @@ std::array<Site,6> Lattice::second_voisins(const Site s) const{
     }
 }
 
+//Compte le nombre de particules présentes sur le Lattice
+//Tous les sites ne sont pas forcément occupé
 int Lattice::Particule_Count() const{
     int count =0;
 
@@ -148,7 +160,10 @@ int Lattice::Particule_Count() const{
     return count;
 }
 
-//Renvoie une matrix N*2 contenant les coordonées des N particules
+//Renvoie une Matrix Particules de taille N*2 contenant les coordonées des N particules
+//On accède aux coordonnées x et y de la particule i par Particules(i, 0) et Particules(i, 1) respectivement
+//La connaissance de la positions des particules est primordial car nous travaillons à basse densité (N_parts = 0.1 * N_Sites)
+//Cela nous permettra dans l'algorithme de Metropolis  de tirer aléatoirement un site occupé
 Matrix Lattice::Pos_Particules(const Lattice &L) const{
     int Nbr_particules= L.Particule_Count();    
     Matrix Particules = Matrix(Nbr_particules,2);
@@ -167,6 +182,7 @@ Matrix Lattice::Pos_Particules(const Lattice &L) const{
     return Particules;
 }
 
+//Cette méthode nous permet de renormaliser notre Lattice (Voir rapport partie Renormalisation)
 Lattice Lattice::Renormalisation() const{
     Lattice R = Lattice(nx/2,ny/2);
 
@@ -195,7 +211,6 @@ int8_t& Lattice::operator[] (Site s){
     return data[s._index];
 }
 
-
 int ConComp::operator[] (SiteC s) const{
     return data[s._index];
 }
@@ -209,66 +224,13 @@ Lattice::Lattice(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
     data= new int8_t[nx*ny];
     
     if(ny%2==1){
-        throw std::runtime_error("ny doit être pair pour respecter les conditions de BVK");
+        throw std::runtime_error("ny has to be even to enforce BVK periodic conditions");
     }
     for(int i=0;i<nx*ny;i++){
         data[i]=0;
     }
 }
 
-void dfs(const Site s, const Lattice& L, int* data, Lattice& visited, const int CurrentLabel){ 
-    if (visited[s] == 1 || L[s] == 0){
-        return;
-    }
-
-    visited[s] = 1;
-    data[s._index] = CurrentLabel;
-
-    for(Site voisin : L.voisins(s)){
-        dfs(voisin, L, data, visited, CurrentLabel);
-    }
-}
-
-ConComp::ConComp(Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
-    data = new int[nx*ny];
-    Lattice visited = Lattice(nx,ny);
-    //Lattice Connected = Lattice(nx,ny);
-
-    //Pour retirer les cas chiants quand on calcule les outer surface des composantes connexes
-    //On va pas retirer beaucoup de particules anyway ~ 0.1 * ny << NbrParts
-    for(int y=0; y<ny; y++){
-        L[L.site_xy(nx-1, y)] = 0;
-    }
-
-    int CurrentLabel = 1;
-
-    for(int index = 0; index < nx*ny; index++){
-        if (visited[visited.site_index(index)] == 0 && L[L.site_index(index)] != 0){
-            dfs(L.site_index(index), L, data, visited, CurrentLabel);
-            CurrentLabel++;
-        }
-        else if(L[L.site_index(index)] == 0){
-            data[index] = 0;
-        }
-    }
-
-    NbrCC = CurrentLabel;
-}
-
-ConComp::ConComp(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
-    data= new int[nx*ny];
-    
-    if(ny%2==1){
-        throw std::runtime_error("ny doit être pair pour respecter les conditions de BVK");
-    }
-    for(int i=0;i<nx*ny;i++){
-        data[i]=0;
-    }
-}
-
-
-
-//Destructeur
 Lattice::~Lattice(){
     if (data != nullptr){
         delete[] data;
@@ -276,14 +238,26 @@ Lattice::~Lattice(){
     data = nullptr;
 }
 
-ConComp::~ConComp(){
-    if (data != nullptr){
-        delete[] data;
-    }
-    data = nullptr;
-}
-//_____________________________Privée
 
+//__________________________________________________________Classe ConComp__________________________________________________________\\
+
+
+//La Classe ConComp est une classe nous permettant de repérer et numéroter les différentes composantes connexes formées par les
+//particules hexagonales qui siègent sur un Lattice L
+//
+//Un site vide est repéré par un 0
+//Un site occupé est repéré par un entier k > 1 qui renseigne sur l'appartenance de la particule à la composante connexe numéro k
+//
+//Isoler les composantes connexes va se montrer crucial dans l'algorithme générationnel afin de caractériser la phase qui règne 
+//sur le Lattice
+//
+//Cette fois, les données sont stockées dans un int car le nombre de composantes connexes peut rapidement dépasser 127
+
+
+//_____________________________Méthodes
+
+//Echelle de couleur qui simule la colormap Viridis de Python car elle est jolie
+//Le code ne viens pas de nous
 // t dans [0, 1]
 sf::Color viridisColor(float t) {
     // Viridis color map in RGB
@@ -330,7 +304,8 @@ sf::Color viridisColor(float t) {
     return interpolatedColor;
 }
 
-void hexagonOneColor(sf::RenderWindow& window, float viridis, float a, float pos_x, float pos_y, int number){
+//Crée un hexagone de côté a pixels avec, en son centre le numéro de la composante connexe dont la particule fait partie
+void hexagonOneColor(sf::RenderWindow& window, float viridis, float a, float pos_x, float pos_y, int ConCompNumber){
 
     sf::ConvexShape triangle;
     triangle.setPointCount(3);
@@ -349,29 +324,29 @@ void hexagonOneColor(sf::RenderWindow& window, float viridis, float a, float pos
         
         window.draw(triangle);
     }
-    
-        // Draw the number in the middle of the hexagon
+
     sf::Text text;
     sf::Font font;
-
-    // Load a font file (Arial) - replace with the path to your font file
+    
     if (!font.loadFromFile("Arial.ttf")) {
-        // Handle font loading error
+        throw "The font didn't load !, check for a file Arial.ttf";
         return;
     }
 
+    font.loadFromFile("Arial.ttf");
     text.setFont(font);
-    text.setString(std::to_string(number));
+
+    text.setString(std::to_string(ConCompNumber));
     text.setCharacterSize(3*a/4);
     text.setFillColor(sf::Color::Black);
 
-    // Center the text in the middle of the hexagon
     sf::FloatRect textBounds = text.getLocalBounds();
     text.setPosition(pos_x - textBounds.width / 2.0f, pos_y - textBounds.height / 1.0f);
 
     window.draw(text);
 }
 
+//Affiche les composantes connexes dans une window SFML
 void ConComp::Show_Connected_Components(const float a) const{
 
     float taille=a*sqrt(3)/2;
@@ -395,17 +370,6 @@ void ConComp::Show_Connected_Components(const float a) const{
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-    }
-}
-
-void ConComp::write(const std::string Name) const{
-    std::ofstream fich(Name);
-
-    for(int k=0;k<nx*ny;k++){
-        if(k > 0 && k%ny == 0){
-            fich << "\n";
-        }
-        fich << data[k] << " ";
     }
 }
 
@@ -454,6 +418,7 @@ SiteC ConComp::site_index(int index) const{
     }
 }
 
+//Renvoie une liste des premiers voisins de contact du SiteC s
 //Tourne dans le sens trigo, en partant de la droite
 std::array<SiteC,6> ConComp::voisins(const SiteC s) const{
     int x=s._x, y=s._y;
@@ -466,12 +431,13 @@ std::array<SiteC,6> ConComp::voisins(const SiteC s) const{
 }
 
 //Donne la longueur de la bordure extérieure d'une composante connexe
-//Moore-Algorithm
+//Notre algorithme est inspiré de l'algorithme de Moore (Voir partie correspondante dans le rapport)
 int ConComp::OuterBorderLength(const int ConCompNumber) const{
     if(ConCompNumber > NbrCC){
         throw std::invalid_argument("There are not that many connected components");
     }
 
+    
     int k = nx*ny - 1;
     for(k = nx*ny - 1; data[k] != ConCompNumber; k--){}
     int Length = 0;
@@ -519,6 +485,7 @@ int ConComp::OuterBorderLength(const int ConCompNumber) const{
 
 }
 
+//Renvoie une matrice M où M(i, 0) renvoie la taille de la composante connexe i+1
 Matrix ConComp::SizeConComps() const{
     Matrix Size = Matrix(NbrCC, 1);
     //Size(i-1,0) -> Taille de la composante connexe i
@@ -532,6 +499,7 @@ Matrix ConComp::SizeConComps() const{
     return Size;
 }
 
+//Check si la composante connexe est sur le bord de gauche
 bool ConComp::IsOnLeftEdge(const int ConCompNumber) const{
     for(int x=0; x<nx; x++){
         if ((*this)[(*this).site_xy(x,0)] == ConCompNumber){
@@ -541,6 +509,7 @@ bool ConComp::IsOnLeftEdge(const int ConCompNumber) const{
     return false;
 }
 
+//Check si la composante connexe est sur le bord supérieur
 bool ConComp::IsOnTopEdge(const int ConCompNumber) const{
     for(int y=0; y<ny; y++){
         if ((*this)[(*this).site_xy(0,y)] == ConCompNumber){
@@ -550,6 +519,7 @@ bool ConComp::IsOnTopEdge(const int ConCompNumber) const{
     return false;
 }
 
+//Isole la composante connexe sur un nouveau réseau dédié
 ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     if(ConCompNumber > NbrCC){
         throw std::invalid_argument("There are not that many connected components");
@@ -559,6 +529,9 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     int y=0;
     int k=0;
 
+    //Si la composante connexe se trouve sur l'un de ces bords, on shift notre réseau de la moitié de sa longueur
+    //afin de ramener la composante connexe au centre du réseau
+    //On suppose que l'on a pas de composante connexe qui fait plus de la moitiée de la taille du réseau, sinon la décaler de la moitié la ramène sur le côté :( 
     if ((*this).IsOnLeftEdge(ConCompNumber)){
         y = y - ny/2;
     }
@@ -570,6 +543,7 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
         k++;
     }
 
+    //Initialisation des positions extrémales de la composante pour créer le nouveau réseau à la bonne taille
     SiteC s = (*this).site_index(k);
     int xmin = s._x - x, xmax = s._x - x, ymin = s._y - y, ymax = s._y - y;
 
@@ -593,10 +567,10 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     }
 
     int shift = (xmin + 1)%2; //Nécessaire pour conserver la forme de la structure !
-    ConComp Isolated = ConComp(xmax - xmin + 3 + shift, ymax - ymin + 3 + (ymax - ymin + 1)%2);
+    ConComp Isolated = ConComp(xmax - xmin + 3 + shift, ymax - ymin + 3 + (ymax - ymin + 1)%2);//On rajoute de la marge sur les côtés comme ça on a de la place
     Isolated.NbrCC = ConCompNumber;
 
-
+    //Recopiage de la forme dans le nouveau réseau isolé
     for(int xp = 0; xp < xmax - xmin + 1; xp++){
        for(int yp = 0; yp < ymax - ymin + 1; yp++){
           if ((*this)[(*this).site_xy(xmin + x + xp, ymin + yp + y)] == ConCompNumber){
@@ -608,19 +582,22 @@ ConComp ConComp::isolateConComp(const int ConCompNumber) const{
     return Isolated;
 }
 
-void dfs_complementary(const SiteC s, const ConComp& Isolated, ConComp& Complementary, ConComp& visited, const int CurrentLabel){ 
+//Remplace les cases vides situées à l'extérieur d'une composante connexe isolée par des -1
+void dfs_complementary(const SiteC s, const ConComp& Isolated, ConComp& Complementary, ConComp& visited){ 
     if (visited[s] == 1 || Isolated[s] != 0){
         return;
     }
 
     visited[s] = 1;
-    Complementary[s] = CurrentLabel;
+    Complementary[s] = -1;
 
     for(SiteC voisin : Isolated.voisins(s)){
-        dfs_complementary(voisin, Isolated, Complementary, visited, CurrentLabel);
+        dfs_complementary(voisin, Isolated, Complementary, visited);
     }
 }
 
+//Algorithme basé sur Depth-first search algorithm afin de trouver de manière récursive les composantes connexes
+//Voir rapport
 void dfs(const SiteC s, ConComp& Complementary, ConComp& visited, const int CurrentLabel){ 
     if (visited[s] == 1 || Complementary[s] == -1){
         return;
@@ -634,6 +611,8 @@ void dfs(const SiteC s, ConComp& Complementary, ConComp& visited, const int Curr
     }
 }
 
+//Renvoie le complémentaire d'une composante connexe isolée, un site vide est représenté par un -1
+//Les trous, autrefois représenté par des zéros sont désormais repérés avec le numéro de leur composante connexe
 ConComp ConComp::Complementary() const{
     ConComp visited = ConComp(nx, ny);
     ConComp Complementary = ConComp(nx, ny);
@@ -643,7 +622,7 @@ ConComp ConComp::Complementary() const{
             Complementary[Complementary.site_index(k)] = -1;
         }
     }
-    dfs_complementary((*this).site_index(0), *this, Complementary, visited, -1);
+    dfs_complementary((*this).site_index(0), *this, Complementary, visited);
 
     int CurrentLabel = 1;
 
@@ -659,6 +638,7 @@ ConComp ConComp::Complementary() const{
     return Complementary;
 }
 
+//Renvoie la taille de tous les trous d'une composante connexe isolée
 int ConComp::SizeOfHoles() const{
     Matrix SizeHoles = (*this).Complementary().SizeConComps();
     int Size = 0;
@@ -670,6 +650,7 @@ int ConComp::SizeOfHoles() const{
     return Size;
 }
 
+//Renvoie les caractéristiques de chaque composante connexe
 //Size, SizeHoles, Volume, Porosity, Surface to volume ratio, Sphericity
 //Parameters(CCN-1,i) -> param i de la CCN
 Matrix ConComp::ClustersParameters() const{
@@ -689,4 +670,66 @@ Matrix ConComp::ClustersParameters() const{
     }
 
     return Parameters;
+}
+
+
+//_____________________________Constructeurs
+
+//Algorithme basé sur Depth-first search algorithm afin de trouver de manière récursive les composantes connexes
+//Voir rapport
+void dfs(const Site s, const Lattice& L, int* data, Lattice& visited, const int CurrentLabel){ 
+    if (visited[s] == 1 || L[s] == 0){
+        return;
+    }
+
+    visited[s] = 1;
+    data[s._index] = CurrentLabel;
+
+    for(Site voisin : L.voisins(s)){
+        dfs(voisin, L, data, visited, CurrentLabel);
+    }
+}
+
+//Assigne à chaque particule située sur un Lattice sa composante connexe
+ConComp::ConComp(Lattice& L) : nx(L.nx), ny(L.ny), data(nullptr){
+    data = new int[nx*ny];
+    Lattice visited = Lattice(nx,ny);
+
+    //Pour retirer les cas chiants quand on calcule les outer surface des composantes connexes
+    //On va pas retirer beaucoup de particules anyway ~ 0.1 * ny << NbrParts
+    for(int y=0; y<ny; y++){
+        L[L.site_xy(nx-1, y)] = 0;
+    }
+
+    int CurrentLabel = 1;
+
+    for(int index = 0; index < nx*ny; index++){
+        if (visited[visited.site_index(index)] == 0 && L[L.site_index(index)] != 0){
+            dfs(L.site_index(index), L, data, visited, CurrentLabel);
+            CurrentLabel++;
+        }
+        else if(L[L.site_index(index)] == 0){
+            data[index] = 0;
+        }
+    }
+
+    NbrCC = CurrentLabel;
+}
+
+ConComp::ConComp(int nx_, int ny_) : nx(nx_), ny(ny_), data(nullptr){
+    data= new int[nx*ny];
+    
+    if(ny%2==1){
+        throw std::runtime_error("ny has to be even to enforce BVK periodic conditions");
+    }
+    for(int i=0;i<nx*ny;i++){
+        data[i]=0;
+    }
+}
+
+ConComp::~ConComp(){
+    if (data != nullptr){
+        delete[] data;
+    }
+    data = nullptr;
 }

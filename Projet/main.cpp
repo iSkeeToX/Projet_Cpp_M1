@@ -51,7 +51,6 @@ void ConCompTest(){
 
     ConComp Connected = ConComp(L);
 
-    Connected.write("Connected_Components.txt");
     sf::Color custom(127, 127, 127, 255); //Gris 
 
     Matrix Size = Connected.SizeConComps();
@@ -152,17 +151,17 @@ int main(){
         Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Sigmoide_Du_Cul.txt", acceptation);
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Plus_De_Trou.txt", acceptation);
         }
     }
 
-    double stdev = 8;
+    stdev = 8;
     for(double mean : {-5, 0, 5}){
         cout << "mean : " << mean << "stdev : " << stdev << "\n";
         Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Sigmoide_Du_Cul.txt", acceptation);
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Plus_De_Trou.txt", acceptation);
         }
     }
     
