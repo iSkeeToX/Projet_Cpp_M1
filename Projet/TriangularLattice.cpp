@@ -351,7 +351,7 @@ void ConComp::Show_Connected_Components(const float a) const{
 
     float taille=a*sqrt(3)/2;
 
-    sf::RenderWindow window(sf::VideoMode(1500, 900), "Connected Components of The Lattice");
+    sf::RenderWindow window(sf::VideoMode(1055, 900), "Connected Components of The Lattice");
 
     window.clear(sf::Color(0,0,0));
     for(int i=0;i<nx;i++){

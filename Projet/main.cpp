@@ -15,17 +15,9 @@ using namespace std;
 #include<random>
 
 //Cette fonction illustre une simulation typique d'un individu avec l'algorithme de Monte-Carlo
-void Metropolis(){
-    int nx=50, ny=50;
-    int Nparts = (nx*ny)/9;
-
-    float taille = 10;
+void Metropolis(int nx, int ny, int Nparts, float taille, int N_T, int N_Steps, int N_Stats){
 
     IsingModel Ising = IsingModel(nx, ny);
-
-    int N_T = 100; //Number of temperatures
-    int N_Steps = 10 * (nx * ny); //Number of steps by temperature
-    int N_Stats = 100 *(nx*ny); //Number of steps on which we "average"
 
     Ising.Gaussian_InteractionMap(0, 10);
 
@@ -58,84 +50,48 @@ void Metropolis(){
     }
 }
 
+//Cette fonction illustre les fonctionnalités principales de la classe ConComp
+//Vous verrez agir le constructeur de la classe, qui passe d'un Lattice à ses composantes connexes
+//Puis nous isolerons la composante connexe de plus grande taille et nous calculerons sont périmètre
+void ConnectedComponentDisplay(int nx, int ny, int Nparts, float taille){
 
-void FaitTournerMetropolis() {
-    
-    int nx=256, ny=256;
-    int Nparts=(nx*ny)/9;
-    //float Taille=8;
-
-    IsingModel Ising=IsingModel(nx, ny);
+    IsingModel Ising= IsingModel(nx, ny);
     Ising.Initialise_Lattice(Nparts);
-    Ising.Gaussian_InteractionMap(0,10);
-
-    Ising.InteractionMap.afficher();
-    cout << "___________\n";
-
-    int N_T = 100; //Number of temperatures
-    int N_steps = pow(10,4); //Number of steps by temperature
-    //int N_statistics=pow(10,4); //Number of steps on which we do the averaging
-
 
     sf::Color custom(127, 127, 127, 255); //Gris 
-    sf::RenderWindow window(sf::VideoMode(1500,900), "Mon super projet");
-
-    //Ising.beta = ...
-    Ising.Annealing(N_T, N_steps);
-    //Ising.Annealing(N_T, N_steps, Taille, window);
+    sf::RenderWindow window(sf::VideoMode(880,760), "Illustration Classe ConComp");
     
-    Ising.Metropolis_Step();
-}
-
-void ConCompTest(){
-    int nx=20, ny=20;
-    float Taille=10;
-
-    IsingModel L= IsingModel(nx, ny);
-    L.Initialise_Lattice(100);
-
-    ConComp Connected = ConComp(L);
-
-    sf::Color custom(127, 127, 127, 255); //Gris 
-
-    Matrix Size = Connected.SizeConComps();
-    
-    for(int ConCompNumber=1; ConCompNumber < Connected.NbrCC; ConCompNumber++){
-        cout << "ConComp : " << ConCompNumber << " Length : " << Connected.OuterBorderLength(ConCompNumber) << " Size : " << Size(ConCompNumber-1,0) << "\n";
+    while((window.isOpen())){
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        window.clear(custom);
+        Ising.affiche_SFML(window, taille);
+        window.display();
     }
 
-    Connected.Show_Connected_Components(2*Taille);
-    cout << Connected.NbrCC << "\n";
-}
-
-void COnCompTest(){
-    IsingModel Ising = IsingModel(25,50);
-
-    Ising.Initialise_Lattice(250);
-    
     ConComp Connected = ConComp(Ising);
-    //Connected.NbrCC = 1;
-
-    //int x = 10, y = 10;
-    //Connected[Connected.site_xy(x,y)]=1, Connected[Connected.site_xy(x+1,y)]=1, Connected[Connected.site_xy(x+2,y)]=1;
-    //Connected[Connected.site_xy(x+1,y+1)]=1, Connected[Connected.site_xy(x+1,y+2)]=1;
-    //Connected[Connected.site_xy(x+2,y+2)]=1, Connected[Connected.site_xy(x+3,y+2)]=1,Connected[Connected.site_xy(x+3,y+1)]=1, Connected[Connected.site_xy(x+3,y)]=1;
     
-    //int xp = x + 4;
-    //Connected[Connected.site_xy(xp,y)]=1, Connected[Connected.site_xy(xp+1,y)]=1, Connected[Connected.site_xy(xp+2,y)]=1;
-    //Connected[Connected.site_xy(xp+1,y+1)]=1, Connected[Connected.site_xy(xp+1,y+2)]=1;
-    //Connected[Connected.site_xy(xp+2,y+2)]=1, Connected[Connected.site_xy(xp+3,y+2)]=1,Connected[Connected.site_xy(xp+3,y+1)]=1, Connected[Connected.site_xy(xp+3,y)]=1;
-    
-    cout << Connected.NbrCC << "\n";
 
-    Matrix Parameters = Connected.ClustersParameters();
+    Matrix Size = Connected.SizeConComps();
+    int CCN = 0, SizeN = 0;
+    for(int i=0; i<Connected.NbrCC; i++){
+        if(Size(i, 0) > SizeN){
+            CCN = i + 1;
+            SizeN = Size(i, 0);
+        }
+    }
 
-    cout << Parameters;
-
-    Connected.Show_Connected_Components(2*7);
-    
+    ConComp Isolated = Connected.isolateConComp(CCN);
+    std::cout << "Nous allons désormais isoler la plus grande composante connexe qui se trouve être la composante connexe numéro " << CCN << "\n";
+    std::cout << "La longueur du périmètre de cette composante connexe est : " << Isolated.OuterBorderLength(CCN) << "\n";
+    Connected.Show_Connected_Components(1.2*taille);
+    Isolated.Show_Connected_Components(3*taille);
 }
 
+//Cette fonction nous permet d'effectuer les captures d'écran des Individus que l'on a sélectionné manuellement lors d'une simulation
 void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, int N_Steps, int N_Stat){
     ifstream fich(Name);
 
@@ -174,6 +130,59 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
 
 }
 
+//Cette fonction nous permet de Caractériser, pour une carte d'interaction donnée l'espérance et l'écart type
+//de la fitness après simulation, cela nous permet d'effectuer les graphes situés dans /Data/Fluct/
+void Characterize_Fluct(){
+    
+    std::ofstream fich("FluctFitness.dat");
+    
+    std::random_device rdd;
+    std::mt19937 genn(rdd());
+
+    int nx = 30, ny = 30;
+    int Nparts = (nx*ny)/9;
+
+    int N_Temps = 100;
+    int N_Steps = 10 * Nparts;
+
+    int N_Stat = 100 * Nparts;
+    
+    double mean=0, stdev = 10;
+    double T_0i = 10, T_0;
+
+    std::normal_distribution Gaussian(mean ,stdev);
+    
+    IsingModel Ising=IsingModel(nx, ny);
+    Ising.Gaussian_InteractionMap(mean, stdev);
+    std::ofstream fich1("IntMap.dat");
+
+    for(int j=0; j<6; j++){
+        for(int i=j; i<6; i++){
+            fich1 << Ising.InteractionMap(i, j) << " ";
+            if( Ising.InteractionMap(i, j) > T_0i){
+                T_0i = std::abs(Ising.InteractionMap(i, j));
+            }
+        }
+    }
+    fich1.close();
+
+    for(int i=0; i < 100; i++){
+        T_0 = T_0i;
+        Ising.Initialise_Lattice(Nparts);
+        Ising.beta = 1/T_0;
+        Ising.Annealing(N_Temps, N_Steps);
+
+        for(int stat=0; stat < N_Stat; stat++){
+            Ising.Metropolis_Step();
+        }
+        fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
+        Ising.Vider_Lattice();
+    }
+    fich.close();
+
+}
+
+
 void maint(){
     
     int nx = 30, ny = 30;
@@ -210,28 +219,11 @@ void maint(){
         }
     }
     
-    
-
     //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
 }
 
-void mmain(){
-    int nx = 30, ny = 30;
-    int Nparts = (nx*ny)/9;
-
-    int N_Temps = 100;
-    int N_Steps = 10 * Nparts;
-
-    int N_Stat = 100 * Nparts;
-
-    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
-}
-
 int main(){
-    //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
-    //Metropolis();
-
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
 
@@ -240,5 +232,11 @@ int main(){
 
     int N_Stat = 100 * Nparts;
 
-    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    float taille = 10;
+
+    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    //ConnectedComponentDisplay(nx, ny, Nparts, taille, N_T, N_Steps, N_Stats);
+    //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
+    //Metropolis(int nx, int ny, int Nparts, float taille, );
 }
+

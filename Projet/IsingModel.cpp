@@ -269,7 +269,13 @@ void IsingModel::Metropolis_Step(){
 //Cela permet de pas être contraint de conserver une liaison car nous n'avons pas l'énergie de la briser
 void IsingModel::Annealing(const int N_T, const int N_steps){
 
-    double T_0 = 1/beta;
+    double T_0 = 0;
+
+    for(int j=0; j < 6; j++){
+        for(int i=j; i<6; i++){
+            T_0 = std::max(T_0, (double) abs((*this).InteractionMap(i,j)));
+        }
+    }
     double dT = (1 - T_0)/(N_T - 1);
 
     int steps = 0;
