@@ -183,7 +183,7 @@ void Characterize_Fluct(){
 }
 
 
-void maint(){
+int main(){
     
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -205,7 +205,7 @@ void maint(){
         Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Plus_De_Trou.txt", acceptation);
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
         }
     }
 
@@ -215,7 +215,7 @@ void maint(){
         Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "Plus_De_Trou.txt", acceptation);
+            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
         }
     }
     
@@ -223,7 +223,7 @@ void maint(){
 
 }
 
-int main(){
+void maint(){
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
 
