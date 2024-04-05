@@ -11,7 +11,7 @@ std::default_random_engine  re(time(0));
 
 //_____________________________Fonctions
 
-//Fonction fitness, cette fonction est cruciale pour le bon fonctionnement de l'algorithme générationnel
+//Fonction fitness, cette fonction est cruciale pour le bon fonctionnement de l'algorithme génétique
 //Elle permet de noter les différents individus, nous avons choisi d'essayer de la maximiser
 //Malheureusement, il n'y a pas de méthode générale pour créer une fonction de récompense, nous devons alors tatonner
 double recompense(const Matrix& MeanParameters){
@@ -251,9 +251,8 @@ Matrix Darwin::futurs_parents(const double acceptation) const{
     
     int i,j,k;
     double acc;
-
-    
-    Matrix futurs_parents = Matrix(pop/2, 2); //2 juste pour pas refaire l'algo de sort
+     
+    Matrix futurs_parents = Matrix(pop/2, 2); //2 juste pour pas refaire l'algo de sort qui trie une matrice avec deux colonnes
     
     std::uniform_int_distribution<int> Indidivu_Aleatoire(0, pop - 1);
     std::uniform_real_distribution<double> Tirer_Proba_Acceptation(0, 1);
