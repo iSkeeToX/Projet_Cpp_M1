@@ -31,6 +31,18 @@ double recompense(const Matrix& MeanParameters){
 //New_Aim  -10*pow(Size - 9, 6) - 30*pow(SizeHoles - 2, 6) - pow(Vol - 11, 4) - 30*pow(porosity - 0.14, 4) - 10*pow(std::abs(Sphericity - 0.9), 3)
 
 
+double TestGaz(const Matrix& MeanParameters){
+    double Size = MeanParameters(0,0);
+
+    return -10*(Size-1);
+}
+
+double TestGazExp(const Matrix& MeanParameters){
+    double Size = MeanParameters(0,0);
+    double a = 1/log(11);
+    return exp(1/(Size + a - 1)) - 1;
+}
+
 //Renvoie une matrice contenant le génome des enfants créés à partir de celui de leurs parents avec une probabilité de muter telle que :
 //0.1% de retirer son gène aléatoirement selon la loi normale N(mean, stdev)
 //0.1% de changer le signe de l'interaction
@@ -349,6 +361,18 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean
         }
         Scores(i, 1) = i;
         Scores(i, 0) = 0;
+    }
+    }
+    
+    if(true){
+    //Potentiel reste d'individus si l'on a tiré 2 fois le même parent dans le tournoi
+    for(int i = k + Genes_enfants.nx; i<pop; i++){
+        for(int j=0; j < 21; j++){
+            Genes(i, j) = Genes(Genes.nx-i, j);
+        }
+        Scores(i, 1) = i;
+        Scores(i, 0) = 0;
+    
     }
     }
 }

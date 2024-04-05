@@ -132,7 +132,7 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
 
 //Cette fonction nous permet de Caractériser, pour une carte d'interaction donnée l'espérance et l'écart type
 //de la fitness après simulation, cela nous permet d'effectuer les graphes situés dans /Data/Fluct/
-void Characterize_Fluct(){
+void Characterize_Fluct(bool GaussianOrNot, bool SameConfigOrNot){
     
     std::ofstream fich("FluctFitness.dat");
     
@@ -152,7 +152,7 @@ void Characterize_Fluct(){
 
     IsingModel Ising=IsingModel(nx, ny);
     
-    if(false){//InteractionMap Gaussienne
+    if(GaussianOrNot){//InteractionMap Gaussienne
     std::normal_distribution Gaussian(mean ,stdev);
     Ising.Gaussian_InteractionMap(mean, stdev);
     std::ofstream fich1("IntMap.dat");
@@ -167,8 +167,7 @@ void Characterize_Fluct(){
     }
     fich1.close();
     }
-
-    if(true){//InteractionMap Discrète dans -10, 0, 10;
+    else{//InteractionMap Discrète dans -10, 0, 10;
     std::ofstream fich1("IntMapDiscrete.dat");
     std::uniform_int_distribution<int> unif(-1,1);
 
@@ -181,9 +180,10 @@ void Characterize_Fluct(){
             }
         }
     }
+    fich1.close();
     }
 
-    if(true){//La configuration initiale change à chaque itération
+    if(SameConfigOrNot){//La configuration initiale change à chaque itération
     for(int i=0; i < 100; i++){
         T_0 = T_0i;
         Ising.Initialise_Lattice(Nparts);
@@ -195,11 +195,10 @@ void Characterize_Fluct(){
         }
         fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
         Ising.Vider_Lattice();
+        fich.close();
     }
-    fich.close();
     }
-
-    if(false){//La configuration initiale est la même pour tout le monde
+    else{//La configuration initiale est la même pour tout le monde
     IsingModel Config = IsingModel(nx, ny);
     Config.Initialise_Lattice(Nparts);
 
@@ -217,14 +216,13 @@ void Characterize_Fluct(){
         }
         fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
         Ising.Vider_Lattice();
+        fich.close();
     }
-    fich.close();
     }
-
 }
 
 
-void mmain(){
+void aa(){
 
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -262,17 +260,26 @@ void mmain(){
     }
     }
 
+    if(false){
     Darwin D = Darwin(MutationFlip, recompense, pop, NbrGenes, nx, ny);
     double mean = 0, stdev = 0;
     for(int i=0; i<500; i++){
         D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "DiscreteFlipTrous4.txt", acceptation);
     }
+    }
     //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
+    if(true){
+    Darwin D = Darwin(MutationFlip, TestGaz, pop, NbrGenes, nx, ny);
+    double mean = 0, stdev = 0;
+    for(int i=0; i<100; i++){
+        D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "TestGaz.txt", acceptation);
+    }
+    }
 }
 
 int main(){
-    if(false){
+    if(true){
     
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -284,13 +291,13 @@ int main(){
 
     float taille = 10;
 
-    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
-    ConnectedComponentDisplay(nx, ny, Nparts, taille);
+    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    //ConnectedComponentDisplay(nx, ny, Nparts, taille);
     //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
-    Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
+    //Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
     }
 
-    Characterize_Fluct();
+    Characterize_Fluct(false, false);
 
 }
 

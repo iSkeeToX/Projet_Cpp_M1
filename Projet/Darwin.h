@@ -40,6 +40,9 @@ class Darwin{
 };
 
 double recompense(const Matrix& MeanParameters);
+double TestGaz(const Matrix& MeanParameters);
+double TestGazExp(const Matrix& MeanParameters);
+
 
 Matrix MutationGaussiannFlip(const Matrix& Genes, const Matrix& couples, double mean, double stdev);
 
