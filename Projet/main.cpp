@@ -150,9 +150,10 @@ void Characterize_Fluct(){
     double mean=0, stdev = 10;
     double T_0i = 10, T_0;
 
-    std::normal_distribution Gaussian(mean ,stdev);
-    
     IsingModel Ising=IsingModel(nx, ny);
+    
+    if(false){//InteractionMap Gaussienne
+    std::normal_distribution Gaussian(mean ,stdev);
     Ising.Gaussian_InteractionMap(mean, stdev);
     std::ofstream fich1("IntMap.dat");
 
@@ -165,7 +166,24 @@ void Characterize_Fluct(){
         }
     }
     fich1.close();
+    }
 
+    if(true){//InteractionMap Discrète dans -10, 0, 10;
+    std::ofstream fich1("IntMapDiscrete.dat");
+    std::uniform_int_distribution<int> unif(-1,1);
+
+        for(int j=0; j<6; j++){
+        for(int i=j; i<6; i++){
+            Ising.InteractionMap(i, j) = 10*unif(rdd);
+            fich1 << Ising.InteractionMap(i, j) << " ";
+            if( Ising.InteractionMap(i, j) > T_0i){
+                T_0i = std::abs(Ising.InteractionMap(i, j));
+            }
+        }
+    }
+    }
+
+    if(true){//La configuration initiale change à chaque itération
     for(int i=0; i < 100; i++){
         T_0 = T_0i;
         Ising.Initialise_Lattice(Nparts);
@@ -179,6 +197,29 @@ void Characterize_Fluct(){
         Ising.Vider_Lattice();
     }
     fich.close();
+    }
+
+    if(false){//La configuration initiale est la même pour tout le monde
+    IsingModel Config = IsingModel(nx, ny);
+    Config.Initialise_Lattice(Nparts);
+
+    for(int i=0; i < 100; i++){
+        T_0 = T_0i;
+        Ising.Initialise_Lattice(Nparts);
+        Ising = Config;
+        Ising.Particles = Config.Particles;
+
+        Ising.beta = 1/T_0;
+        Ising.Annealing(N_Temps, N_Steps);
+
+        for(int stat=0; stat < N_Stat; stat++){
+            Ising.Metropolis_Step();
+        }
+        fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
+        Ising.Vider_Lattice();
+    }
+    fich.close();
+    }
 
 }
 
@@ -231,6 +272,8 @@ void mmain(){
 }
 
 int main(){
+    if(false){
+    
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
 
@@ -242,8 +285,12 @@ int main(){
     float taille = 10;
 
     AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
-    //ConnectedComponentDisplay(nx, ny, Nparts, taille);
+    ConnectedComponentDisplay(nx, ny, Nparts, taille);
     //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
-    //Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
+    Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
+    }
+
+    Characterize_Fluct();
+
 }
 
