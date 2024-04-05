@@ -22,12 +22,106 @@ double recompense(const Matrix& MeanParameters){
     //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
     double Sphericity = MeanParameters(0, 5);
     
-    return -10*pow(Size - 9, 6) - 30*pow(SizeHoles - 2, 6) - pow(Vol - 11, 4) - 30*pow(porosity - 0.14, 4) - 10*pow(std::abs(Sphericity - 0.9), 3);
+    return -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 }
 
 //Fitness_Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 //Sigmoide_Du_Cul 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
 //Plus_De_Trou -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
+//New_Aim  -10*pow(Size - 9, 6) - 30*pow(SizeHoles - 2, 6) - pow(Vol - 11, 4) - 30*pow(porosity - 0.14, 4) - 10*pow(std::abs(Sphericity - 0.9), 3)
+
+
+//Renvoie une matrice contenant le génome des enfants créés à partir de celui de leurs parents avec une probabilité de muter telle que :
+//0.1% de retirer son gène aléatoirement selon la loi normale N(mean, stdev)
+//0.1% de changer le signe de l'interaction
+Matrix MutationGaussiannFlip(const Matrix& Genes, const Matrix& couples, double mean, double stdev){
+    Matrix Genes_enfants = Matrix(2*couples.nx,21);
+
+    Matrix enfant1 = Matrix(21,1);
+    Matrix enfant2 = Matrix(21,1);
+
+    std::normal_distribution<double> Normal(mean, stdev);
+    std::uniform_int_distribution<int> Choix_Heredite(0, 1);
+    std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
+
+    int shift = 0, choix_parent;
+    for(int i=0;i<couples.nx;i++){        
+        for(int j=0;j<21;j++){
+            choix_parent = Choix_Heredite(re);
+
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant1(j, 0) = Normal(re);
+            }
+            else if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant1(j, 0) = -Genes(couples(i, choix_parent), j);
+            }
+            else{
+                enfant1(j, 0) = Genes(couples(i, choix_parent), j);
+            }
+
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant2(j, 0) = Normal(re);
+            }
+            else if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant2(j, 0) = -Genes(couples(i, 1-choix_parent), j);
+            }
+            else{
+                enfant2(j, 0) = Genes(couples(i, 1-choix_parent), j);
+            }
+        }
+
+        for(int k=0;k<21;k++){
+            Genes_enfants(shift,k)=enfant1(k,0);
+            Genes_enfants(shift+1,k)=enfant2(k,0);
+        }
+        shift+=2;
+    }
+
+    return Genes_enfants;
+}
+
+//Renvoie une matrice contenant le génome des enfants créés à partir de celui de leurs parents avec une probabilité de muter telle que :
+//0.1% de changer le signe de l'interaction
+Matrix MutationFlip(const Matrix& Genes, const Matrix& couples, double mean, double stdev){
+    if(mean == stdev){};
+    Matrix Genes_enfants = Matrix(2*couples.nx,21);
+
+    Matrix enfant1 = Matrix(21,1);
+    Matrix enfant2 = Matrix(21,1);
+
+    std::uniform_int_distribution<int> Choix_Heredite(0, 1);
+    std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
+
+    int shift = 0, choix_parent;
+    for(int i=0;i<couples.nx;i++){        
+        for(int j=0;j<21;j++){
+            choix_parent = Choix_Heredite(re);
+
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant1(j, 0) = -Genes(couples(i, choix_parent), j);
+            }
+            else{
+                enfant1(j, 0) = Genes(couples(i, choix_parent), j);
+            }
+
+            if (Tirer_Proba_Mutation(re) < 0.001){
+                enfant2(j, 0) = -Genes(couples(i, 1-choix_parent), j);
+            }
+            else{
+                enfant2(j, 0) = Genes(couples(i, 1-choix_parent), j);
+            }
+        }
+
+        for(int k=0;k<21;k++){
+            Genes_enfants(shift,k)=enfant1(k,0);
+            Genes_enfants(shift+1,k)=enfant2(k,0);
+        }
+        shift+=2;
+    }
+
+    return Genes_enfants;
+}
+
 
 //_____________________________Méthodes
 
@@ -57,7 +151,7 @@ void Darwin::Simulation(int Individu, int Nparts, int N_Temp, int N_Steps, int N
         Ising.Metropolis_Step();
     }
 
-    Scores(Individu, 0) = recompense(ConComp(Ising).ClustersParameters().mean_columns());
+    Scores(Individu, 0) = FitnessFunction(ConComp(Ising).ClustersParameters().mean_columns());
     Scores(Individu, 1) = Individu;
 
     Ising.Vider_Lattice();
@@ -211,54 +305,17 @@ Matrix Darwin::couples(const Matrix& futurs_parents) const{
 
 //Creation de la nouvelle génération de gênes
 void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean, double stdev){
-    int i,j,k;
 
-    Matrix Genes_enfants = Matrix(2*couples.nx,21);
-
-    Matrix enfant1 = Matrix(21,1);
-    Matrix enfant2 = Matrix(21,1);
+    Matrix Genes_enfants = mutation(Genes, couples, mean, stdev);
 
     std::normal_distribution<double> Normal(mean, stdev);
-    std::uniform_int_distribution<int> Choix_Heredite(0, 1);
-    std::uniform_real_distribution<double> Tirer_Proba_Mutation(0, 1);
 
-    int shift = 0, choix_parent;
-    for(i=0;i<couples.nx;i++){        
-        for(j=0;j<21;j++){
-            choix_parent = Choix_Heredite(re);
-
-            if (Tirer_Proba_Mutation(re) < 0.001){
-                enfant1(j, 0) = Normal(re);
-            }
-            else if (Tirer_Proba_Mutation(re) < 0.001){
-                enfant1(j, 0) = -Genes(couples(i, choix_parent), j);
-            }
-            else{
-                enfant1(j, 0) = Genes(couples(i, choix_parent), j);
-            }
-
-            if (Tirer_Proba_Mutation(re) < 0.001){
-                enfant2(j, 0) = Normal(re);
-            }
-            else if (Tirer_Proba_Mutation(re) < 0.001){
-                enfant2(j, 0) = -Genes(couples(i, 1-choix_parent), j);
-            }
-            else{
-                enfant2(j, 0) = Genes(couples(i, 1-choix_parent), j);
-            }
-        }
-
-        for(k=0;k<21;k++){
-            Genes_enfants(shift,k)=enfant1(k,0);
-            Genes_enfants(shift+1,k)=enfant2(k,0);
-        }
-        shift+=2;
-    }
-
+    //On trie les deux listes pour que leurs indexs matchent sur les colonnes d'intérêt
     quicksort(futurs_parents, 0, futurs_parents.nx - 1, true, 0);
     quicksort(Scores, 0, Scores.nx - 1, true, 1);
-    k = 0;
-    for(j=0; j < 21; j++){
+    
+    int k = 0;
+    for(int j=0; j < 21; j++){
         Genes(k, j) = Genes(futurs_parents(0 ,0), j);
     }
     Scores(k, 0) = Scores(futurs_parents(0 ,0), 0);
@@ -266,9 +323,9 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean
     k++;
 
     //Individus vainqueurs de Hunger Games
-    for(i=1; i<futurs_parents.nx; i++){
+    for(int i=1; i<futurs_parents.nx; i++){
         if (futurs_parents(i, 0) != futurs_parents(i-1, 0)){
-            for(j=0; j < 21; j++){
+            for(int j=0; j < 21; j++){
                 Genes(k, j) = Genes(futurs_parents(i, 0), j);
             }
             Scores(k, 0) = Scores(futurs_parents(i ,0), 0);
@@ -278,20 +335,22 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean
     }
     
     //Individus créés par les vainqueurs
-    for(i = 0; i < Genes_enfants.nx; i++){
-        for(j=0; j<21; j++){    
+    for(int i = 0; i < Genes_enfants.nx; i++){
+        for(int j=0; j<21; j++){    
             Genes(k + i, j) = Genes_enfants(i, j);
         }
         Scores(k + i, 0) = 0;
     }
 
+    if(false){
     //Potentiel reste d'individus si l'on a tiré 2 fois le même parent dans le tournoi
-    for(i = k + Genes_enfants.nx; i<pop; i++){
+    for(int i = k + Genes_enfants.nx; i<pop; i++){
         for(int j=0; j < 21; j++){
             Genes(i, j) = Normal(re);
         }
         Scores(i, 1) = i;
         Scores(i, 0) = 0;
+    }
     }
 }
 
@@ -325,12 +384,35 @@ void Darwin::Next_Generation(double mean, double stdev, int Nparts, int N_Temps,
 
 //_____________________________Le Constructeur de Darwin
 
-Darwin::Darwin(int pop, int NbrGenes, double mean, double std, int nx, int ny) : pop(pop), generation(0), NbrGenes(NbrGenes), Genes(Matrix(pop, NbrGenes, mean, std)), Scores(Matrix(pop,2)), Ising(IsingModel(nx, ny)){
+//Crée une population dont les gènes de la population initiale sont tirés suivant une loi gaussienne
+Darwin::Darwin(Matrix Mut(const Matrix&, const Matrix&, double, double), double FitFunc(const Matrix&), int pop, int NbrGenes, double mean, double std, int nx, int ny) : pop(pop), generation(0), NbrGenes(NbrGenes), Genes(Matrix(pop, NbrGenes, mean, std)), Scores(Matrix(pop,2)), Ising(IsingModel(nx, ny)){
 
+    mutation = Mut;
+    FitnessFunction = FitFunc;
     for(int i=0; i < Scores.nx; i++){
         Scores(i,1) = i;
     }
 
 }
 
-Darwin::~Darwin(){}
+//Crée une population dont les gènes de la population initiale sont tirés uniformément dans {-10, 0, 10}
+Darwin::Darwin(Matrix Mut(const Matrix&, const Matrix&, double, double), double FitFunc(const Matrix&), int pop, int NbrGenes, int nx, int ny) : pop(pop), generation(0), NbrGenes(NbrGenes), Genes(Matrix(pop, NbrGenes)), Scores(Matrix(pop,2)), Ising(IsingModel(nx, ny)){
+    std::uniform_int_distribution<int> unif(-1,1);
+
+    for(int i=0; i<pop; i++){
+        for(int j=0; j<NbrGenes; j++){
+            Genes(i, j) = 10*unif(re);
+        }
+    }
+
+    mutation = Mut;
+    FitnessFunction = FitFunc;
+    for(int i=0; i < Scores.nx; i++){
+        Scores(i,1) = i;
+    }
+}
+
+Darwin::~Darwin(){
+    mutation = nullptr;
+    FitnessFunction = nullptr;
+}

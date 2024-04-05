@@ -183,8 +183,8 @@ void Characterize_Fluct(){
 }
 
 
-int main(){
-    
+void mmain(){
+
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
 
@@ -199,10 +199,11 @@ int main(){
 
     double acceptation = 0.9;
 
+    if(false){
     double stdev = 10;
     for(double mean : {-10, 0, 10}){
         cout << "mean : " << mean << "stdev : " << stdev << "\n";
-        Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
+        Darwin D = Darwin(MutationGaussiannFlip, recompense, pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
             D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
@@ -212,18 +213,24 @@ int main(){
     stdev = 8;
     for(double mean : {-5, 0, 5}){
         cout << "mean : " << mean << "stdev : " << stdev << "\n";
-        Darwin D = Darwin(pop, NbrGenes, mean, stdev, nx, ny);
+        Darwin D = Darwin(MutationGaussiannFlip, recompense, pop, NbrGenes, mean, stdev, nx, ny);
 
         for(int i=0; i<100; i++){
             D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
         }
     }
-    
+    }
+
+    Darwin D = Darwin(MutationFlip, recompense, pop, NbrGenes, nx, ny);
+    double mean = 0, stdev = 0;
+    for(int i=0; i<500; i++){
+        D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "DiscreteFlipTrous4.txt", acceptation);
+    }
     //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
 
 }
 
-void maint(){
+int main(){
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
 
@@ -234,9 +241,9 @@ void maint(){
 
     float taille = 10;
 
-    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
-    //ConnectedComponentDisplay(nx, ny, Nparts, taille, N_T, N_Steps, N_Stats);
+    AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    //ConnectedComponentDisplay(nx, ny, Nparts, taille);
     //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
-    //Metropolis(int nx, int ny, int Nparts, float taille, );
+    //Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
 }
 
