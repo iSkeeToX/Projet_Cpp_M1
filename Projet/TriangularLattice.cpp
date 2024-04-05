@@ -9,7 +9,7 @@
 std::random_device rd;
 std::mt19937 gen(rd());
 
-//__________________________________________________________Classe Lattice__________________________________________________________\\
+//__________________________________________________________Classe Lattice__________________________________________________________||
 
 
 //La Classe Lattice est une classe nous permettant de créer un réseau triangulaire sur lequel siègent
@@ -239,7 +239,7 @@ Lattice::~Lattice(){
 }
 
 
-//__________________________________________________________Classe ConComp__________________________________________________________\\
+//__________________________________________________________Classe ConComp__________________________________________________________||
 
 
 //La Classe ConComp est une classe nous permettant de repérer et numéroter les différentes composantes connexes formées par les

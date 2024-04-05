@@ -9,12 +9,39 @@
 
 std::default_random_engine  re(time(0));
 
-//_____________________________Fonctions
+//_____________________________Fitness Functions
 
 //Fonction fitness, cette fonction est cruciale pour le bon fonctionnement de l'algorithme génétique
 //Elle permet de noter les différents individus, nous avons choisi d'essayer de la maximiser
 //Malheureusement, il n'y a pas de méthode générale pour créer une fonction de récompense, nous devons alors tatonner
-double recompense(const Matrix& MeanParameters){
+
+//Première fonction à plusieurs variables
+double PremierTest(const Matrix& MeanParameters){
+    double Size = MeanParameters(0,0);
+    double SizeHoles = MeanParameters(0,1);
+    double Vol = MeanParameters(0, 2);
+    double porosity = MeanParameters(0, 3);
+    //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
+    double Sphericity = MeanParameters(0, 5);
+    
+    return -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
+}
+
+//Essai raté de fonction logistique
+double Sigmoide(const Matrix& MeanParameters){
+    double Size = MeanParameters(0,0);
+    double SizeHoles = MeanParameters(0,1);
+    double Vol = MeanParameters(0, 2);
+    double porosity = MeanParameters(0, 3);
+    //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
+    double Sphericity = MeanParameters(0, 5);
+    
+    return 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
+}
+
+//Variante de la première fonction de récompense, c'est cette 
+//fonction que l'on discute le plus dans l'article
+double PlusDeTrous(const Matrix& MeanParameters){
     double Size = MeanParameters(0,0);
     double SizeHoles = MeanParameters(0,1);
     double Vol = MeanParameters(0, 2);
@@ -25,23 +52,35 @@ double recompense(const Matrix& MeanParameters){
     return -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
 }
 
-//Fitness_Sortie_Du_Cul -10*pow(Size - 6, 6) - 10*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 10*pow(porosity - 1./7, 2) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
-//Sigmoide_Du_Cul 1 / (1 + exp(10*pow(Size - 6, 6) + 10*pow(SizeHoles - 1, 6) + pow(Vol - 7, 4) + 10*pow(porosity - 1./7, 2) + 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3)));
-//Plus_De_Trou -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
-//New_Aim  -10*pow(Size - 9, 6) - 30*pow(SizeHoles - 2, 6) - pow(Vol - 11, 4) - 30*pow(porosity - 0.14, 4) - 10*pow(std::abs(Sphericity - 0.9), 3)
+//Prévision avec des valeurs calculée numériquement par Mme.Koehler
+double New_Aim(const Matrix& MeanParameters){
+    double Size = MeanParameters(0,0);
+    double SizeHoles = MeanParameters(0,1);
+    double Vol = MeanParameters(0, 2);
+    double porosity = MeanParameters(0, 3);
+    //double Surf_To_Vol_Ratio = MeanParameters(0, 4);
+    double Sphericity = MeanParameters(0, 5);
+    
+    return -10*pow(Size - 6, 6) - 30*pow(SizeHoles - 1, 6) - pow(Vol - 7, 4) - 30*pow(porosity - 1./7, 4) - 10*pow(std::abs(Sphericity - sqrt(M_PI*sqrt(3))), 3);
+}
 
-
+//Test de création d'un gaz de particules
 double TestGaz(const Matrix& MeanParameters){
     double Size = MeanParameters(0,0);
 
     return -10*(Size-1);
 }
 
+//Test de création d'un gaz de particules avec une exponentielle
 double TestGazExp(const Matrix& MeanParameters){
     double Size = MeanParameters(0,0);
     double a = 1/log(11);
     return exp(1/(Size + a - 1)) - 1;
 }
+
+
+//_____________________________Mutations
+
 
 //Renvoie une matrice contenant le génome des enfants créés à partir de celui de leurs parents avec une probabilité de muter telle que :
 //0.1% de retirer son gène aléatoirement selon la loi normale N(mean, stdev)
@@ -258,7 +297,7 @@ void Darwin::Data(const std::string Name, double mean_crea, double stdev_crea, d
 }
 
 //Les Individus que l'on conserve sont sélectionnés grâce à une méthode du tournoi
-//(Voir rapport)
+//Voir article, section Modèle et architecture du code
 Matrix Darwin::futurs_parents(const double acceptation) const{
     
     int i,j,k;
@@ -301,7 +340,7 @@ Matrix Darwin::couples(const Matrix& futurs_parents) const{
     std::uniform_int_distribution<int> Tirage_Parent(0,  pop/2 - 1);
     int k, j;
 
-    for(int i=0; i< pop/4 ; i++){   // on considère négligeable la proba de tirer deux fois le même couple et même si c'était le cas pas forcéments mêmes enfants  
+    for(int i=0; i< pop/4 ; i++){
         
         k=Tirage_Parent(re);
         j=Tirage_Parent(re);
@@ -364,7 +403,8 @@ void Darwin::Nouveaux_genes(Matrix& futurs_parents, Matrix& couples, double mean
     }
     }
     
-    if(true){
+    if(true){//ce n'est pas dit dans l'article mais finalement nous utiliserons cette méthode pour "recycler" les individus qui restent à la fin du tableau
+    //Seul la partie sur le modèle discret utilise cette méthode
     //Potentiel reste d'individus si l'on a tiré 2 fois le même parent dans le tournoi
     for(int i = k + Genes_enfants.nx; i<pop; i++){
         for(int j=0; j < 21; j++){

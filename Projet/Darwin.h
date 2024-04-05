@@ -39,7 +39,14 @@ class Darwin{
 
 };
 
-double recompense(const Matrix& MeanParameters);
+void quicksort(Matrix& Scores, int low, int high, bool Ascending, int column);
+
+
+double PremierTest(const Matrix& MeanParameters);
+double Sigmoide(const Matrix& MeanParameters);
+double PlusDeTrous(const Matrix& MeanParameters);
+double New_Aim(const Matrix& MeanParameters);
+
 double TestGaz(const Matrix& MeanParameters);
 double TestGazExp(const Matrix& MeanParameters);
 

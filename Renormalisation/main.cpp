@@ -190,7 +190,7 @@ int main() {
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    int nx=4096, ny=4096;
+    int nx=256, ny=256;
     cin >> nx >> ny;
     int Nparts=(nx*ny)/9, N_bonds=3*nx*ny;
     //float Taille=8;

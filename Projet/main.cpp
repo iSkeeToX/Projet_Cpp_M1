@@ -91,6 +91,38 @@ void ConnectedComponentDisplay(int nx, int ny, int Nparts, float taille){
     Isolated.Show_Connected_Components(3*taille);
 }
 
+void EvolutionDeDarwin(int NbrGenes, double mean, double stdev){
+    int pop =10, nx = 30, ny = 30, Nparts = (nx*ny)/9;
+    int N_Temps = 100, N_Steps = nx*ny, N_stats = nx*ny;//Aucune de ces valeurs n'est utilisée normalement, c'est principalement pour quele programme aille vite
+    int acceptation = 0.9;
+    
+    Darwin D = Darwin(MutationGaussiannFlip, PlusDeTrous, pop, NbrGenes, mean, stdev, nx, ny);
+
+    for(int Individu = 0; Individu < pop; Individu++){
+        D.Simulation(Individu, Nparts, N_Temps, N_Steps, N_stats);
+    }
+    cout << "Le comportement de tous les individus est simulé\n";
+    
+    D.Sort_Scores();
+    
+    //D.data(Name, mean, stdev, acceptation) Ecrit les données dans un fichier texte
+
+    cout << "Gènes de la première génération :\n" << D.Genes;
+
+    Matrix futurs_parents = D.futurs_parents(acceptation);
+    Matrix Couples = D.couples(futurs_parents);
+
+    D.Nouveaux_genes(futurs_parents, Couples, mean, stdev);
+
+    quicksort(futurs_parents, 0 , futurs_parents.nx -1, true, 0);
+    cout << "Voici les futur_parents :\n" << futurs_parents;
+    cout << "Les gènes de la nouvelle génération :\n" << D.Genes;
+
+    cout << "Et voilà, nous sommes passés d'une génération à l'autre\n";
+}
+
+
+
 //Cette fonction nous permet d'effectuer les captures d'écran des Individus que l'on a sélectionné manuellement lors d'une simulation
 void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, int N_Steps, int N_Stat){
     ifstream fich(Name);
@@ -121,106 +153,15 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
             Ising.Metropolis_Step();
         }
         
-        cout << "Fitness : " << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
+        cout << "Fitness : " << PremierTest(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
         cout << "Fitness Simul : " << fitness << '\n';
         Ising.TakePicture();
     }
     fich.close();
 }
 
-//Cette fonction nous permet de Caractériser, pour une carte d'interaction donnée l'espérance et l'écart type
-//de la fitness après simulation, cela nous permet d'effectuer les graphes situés dans /Data/Fluct/
-void Characterize_Fluct(bool GaussianOrNot, bool SameConfigOrNot){
-    
-    std::ofstream fich("FluctFitness.dat");
-    
-    std::random_device rdd;
-    std::mt19937 genn(rdd());
-
-    int nx = 30, ny = 30;
-    int Nparts = (nx*ny)/9;
-
-    int N_Temps = 100;
-    int N_Steps = 10 * Nparts;
-
-    int N_Stat = 100 * Nparts;
-    
-    double mean=0, stdev = 10;
-    double T_0i = 10, T_0;
-
-    IsingModel Ising=IsingModel(nx, ny);
-    
-    if(GaussianOrNot){//InteractionMap Gaussienne
-    std::normal_distribution Gaussian(mean ,stdev);
-    Ising.Gaussian_InteractionMap(mean, stdev);
-    std::ofstream fich1("IntMap.dat");
-
-    for(int j=0; j<6; j++){
-        for(int i=j; i<6; i++){
-            fich1 << Ising.InteractionMap(i, j) << " ";
-            if( Ising.InteractionMap(i, j) > T_0i){
-                T_0i = std::abs(Ising.InteractionMap(i, j));
-            }
-        }
-    }
-    fich1.close();
-    }
-    else{//InteractionMap Discrète dans -10, 0, 10;
-    std::ofstream fich1("IntMapDiscrete.dat");
-    std::uniform_int_distribution<int> unif(-1,1);
-
-        for(int j=0; j<6; j++){
-        for(int i=j; i<6; i++){
-            Ising.InteractionMap(i, j) = 10*unif(rdd);
-            fich1 << Ising.InteractionMap(i, j) << " ";
-            if( Ising.InteractionMap(i, j) > T_0i){
-                T_0i = std::abs(Ising.InteractionMap(i, j));
-            }
-        }
-    }
-    fich1.close();
-    }
-
-    if(SameConfigOrNot){//La configuration initiale change à chaque itération
-    for(int i=0; i < 100; i++){
-        T_0 = T_0i;
-        Ising.Initialise_Lattice(Nparts);
-        Ising.beta = 1/T_0;
-        Ising.Annealing(N_Temps, N_Steps);
-
-        for(int stat=0; stat < N_Stat; stat++){
-            Ising.Metropolis_Step();
-        }
-        fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
-        Ising.Vider_Lattice();
-        fich.close();
-    }
-    }
-    else{//La configuration initiale est la même pour tout le monde
-    IsingModel Config = IsingModel(nx, ny);
-    Config.Initialise_Lattice(Nparts);
-
-    for(int i=0; i < 100; i++){
-        T_0 = T_0i;
-        Ising.Initialise_Lattice(Nparts);
-        Ising = Config;
-        Ising.Particles = Config.Particles;
-
-        Ising.beta = 1/T_0;
-        Ising.Annealing(N_Temps, N_Steps);
-
-        for(int stat=0; stat < N_Stat; stat++){
-            Ising.Metropolis_Step();
-        }
-        fich << recompense(ConComp(Ising).ClustersParameters().mean_columns()) << "\n";
-        Ising.Vider_Lattice();
-        fich.close();
-    }
-    }
-}
-
-
-int main(){
+//Ceci est le main que nous utilisions pour lancer des simulations
+void maint(){
 
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -253,10 +194,8 @@ int main(){
     }
 }
 
-void aa(){
-    if(true){
-    
-    int nx = 30, ny = 30;
+int main(){
+    int nx = 50, ny = 50;
     int Nparts = (nx*ny)/9;
 
     int N_Temps = 100;
@@ -264,13 +203,64 @@ void aa(){
 
     int N_Stat = 100 * Nparts;
 
+    int NbrGenes = 21;
+    double mean = 0, stdev = 10; //kT
+
     float taille = 10;
 
-    AfficherPretendants("GazzExp.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    cout << "Bonjour, voici le projet de Le Bon Louison et Jouve Alexandre intitulé :\n";
+    cout << "Principes d'auto assemblage pour des particules avec des géométries simple et des interactions complexes\n";
+    cout << "Ce travail se base sur la thèse éponyme de Lara Koehler.\n";
+
+    cout << "Ceci est un menu (si si c'en est un) afin de vous donner une vision un peu éclatée du projet.\n";
+    cout << "Les petites fonctions que vous allez faire tourner ici sont écrites dans le fichier main.cpp\n\n";
+
+    //cout << "0 : Notre note au projet C++\n",
+    cout << "1 : Une illustration de notre algorithme de Métropolis\n";
+    cout << "2 : Une démonstration des méthodes principales de la classe ConComp\n";
+    cout << "3 : Une démonstration de la vie d'une génération\n\n";
+
+    int ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage = 0;
+    
+    cout << "Merci de renseigner un nombre entier compris entre 1 et 3\n";
+    cin >> ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage;
+
+    if(ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage == 1){
+        cout << "Tirons un individu au hasard selon une loi normale de paramètre N(0 kT,10 kT)\n";
+        cout << "Vous allez assiter à la simulation complète de cet individu\n";
+        cout << "Cette simulation comprend une phase d'Annealing et une phase de statistique\n";
+        Metropolis(nx, ny, Nparts, taille, 10*N_Temps, N_Steps, N_Stat);
+    }
+    else if (ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage == 2){
+        cout << "Nous allons remplir aléatoirement un Lattice de taille 50*50\n";
+        cout << "Isoler ses composantes connexes et ensuite Identifier puis isoler la plus grande composante connexe\n";
+        cout << "Vous pouvez fermer chaque fenêtre qui apparaît devant vous lorsque vous le souhaitez, cela passera immédiatement à l'étape suivante\n";   
+        ConnectedComponentDisplay(nx, ny, Nparts, taille);
+    }
+    else if(ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage == 3){
+        cout << "Il va se dérouler sous vos yeux la magnifique entreprise de la vie, l'évolution de Darwin\n";
+        cout << "Nous allons simuler une génération d'une population tirée aléatoirement, essayez de voir les nouveaux nés ainsi que les parents conservés\n";
+        EvolutionDeDarwin(NbrGenes, mean, stdev);
+    }
+
+    cout << "Souhaitez vous regarder autre chose ? (0 ou 1)\n";
+    cout << "0 : Non\n";
+    cout << "1 : Oui\n";
+
+    cin >> ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage;
+
+    if(ChoixAffuteEtRationnelDeMKebailiMaisUnPeuEmotionnelIlDoitDecrypter150ProjetEn4JoursQuelCourage != 1){
+        return 0;
+    }
+    else{
+        cout << "Au revoir, et à bientôt pour la présentation orale !\n";
+        main();
+    }
+    //AfficherPretendants("GazzExp.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
     //ConnectedComponentDisplay(nx, ny, Nparts, taille);
     //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
     //Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
-    }
+
 
     //Characterize_Fluct(false, false);
 

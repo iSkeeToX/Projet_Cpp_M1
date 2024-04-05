@@ -1,0 +1,14 @@
+Ceci est un petit projet que j'ai mené tout seul suite au cours de Transition de Phase.
+
+J'ai essayé d'appliquer la méthode de renormalisation que fait Mme.Koehler dans sa thèse.
+
+Ce bout de code est juste ici pour vous montrer une autre facette pas du tout abordée dans l'article, la renormalisation.
+le code n'est en aucun cas fait pour être intelligible pour vous (je ne sais même pas si il l'est encore pour moi ^^, un peu il me semble)
+
+Si vous êtes intéressé, il figure avec l'article un petit article rédigé pour l'occasion sur la renormalisation, c'était un petit projet que l'on avait mené
+avec Roche Hector et Chanut Valentin (il faut quand même créditer ces deux escrocs).
+La partie en lien avec le projet est la dernière avant la conclusion.
+
+Cette partie du code n'est pas du tout orientée objet, elle est orientée je suis en retard il faut que je fasse rapidement quelque chose pour vendredi.
+
+Normalement il compile (attention c'est un peu long car très coûteux) il y a un makefile associé et un programme python qui affiche des cartes.
