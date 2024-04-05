@@ -220,7 +220,7 @@ void Characterize_Fluct(bool GaussianOrNot, bool SameConfigOrNot){
 }
 
 
-void aa(){
+int main(){
 
     int nx = 30, ny = 30;
     int Nparts = (nx*ny)/9;
@@ -232,42 +232,19 @@ void aa(){
 
     int pop = 100, NbrGenes = 21;
 
-    //double mean = 0, stdev = 20;
+    double mean = 0, stdev = 10;
 
     double acceptation = 0.9;
 
-    if(false){
-    double stdev = 10;
-    for(double mean : {-10, 0, 10}){
-        cout << "mean : " << mean << "stdev : " << stdev << "\n";
-        Darwin D = Darwin(MutationGaussiannFlip, recompense, pop, NbrGenes, mean, stdev, nx, ny);
 
-        for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
-        }
-    }
+    cout << "mean : " << mean << "stdev : " << stdev << "\n";
+    Darwin D = Darwin(MutationGaussiannFlip, TestGazExp, pop, NbrGenes, mean, stdev, nx, ny);
 
-    stdev = 8;
-    for(double mean : {-5, 0, 5}){
-        cout << "mean : " << mean << "stdev : " << stdev << "\n";
-        Darwin D = Darwin(MutationGaussiannFlip, recompense, pop, NbrGenes, mean, stdev, nx, ny);
-
-        for(int i=0; i<100; i++){
-            D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "New_Aim.txt", acceptation);
-        }
-    }
+    for(int i=0; i<100; i++){
+        D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "TestGazExpGaussien.txt", acceptation);
     }
 
     if(false){
-    Darwin D = Darwin(MutationFlip, recompense, pop, NbrGenes, nx, ny);
-    double mean = 0, stdev = 0;
-    for(int i=0; i<500; i++){
-        D.Next_Generation(mean, stdev, Nparts, N_Temps, N_Steps, N_Stat, "DiscreteFlipTrous4.txt", acceptation);
-    }
-    }
-    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
-
-    if(true){
     Darwin D = Darwin(MutationFlip, TestGaz, pop, NbrGenes, nx, ny);
     double mean = 0, stdev = 0;
     for(int i=0; i<100; i++){
@@ -276,7 +253,7 @@ void aa(){
     }
 }
 
-int main(){
+void aa(){
     if(true){
     
     int nx = 30, ny = 30;
