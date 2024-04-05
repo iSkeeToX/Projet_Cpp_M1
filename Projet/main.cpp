@@ -125,9 +125,7 @@ void AfficherPretendants(string Name, int nx, int ny, int Nparts, int N_Temps, i
         cout << "Fitness Simul : " << fitness << '\n';
         Ising.TakePicture();
     }
-    
     fich.close();
-
 }
 
 //Cette fonction nous permet de Caractériser, pour une carte d'interaction donnée l'espérance et l'écart type
@@ -291,13 +289,13 @@ int main(){
 
     float taille = 10;
 
-    //AfficherPretendants("test.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
+    AfficherPretendants("GazzExp.txt", nx, ny, Nparts, N_Temps, N_Steps, N_Stat);
     //ConnectedComponentDisplay(nx, ny, Nparts, taille);
     //50*50, 277 particules, Carte d'interaction Gaussienne N(0, 10)
     //Metropolis(nx, ny, Nparts, taille, N_Temps, N_Steps, N_Stat);
     }
 
-    Characterize_Fluct(false, false);
+    //Characterize_Fluct(false, false);
 
 }
 
